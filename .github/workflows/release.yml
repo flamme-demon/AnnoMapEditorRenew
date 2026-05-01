@@ -23,42 +23,31 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Build Linux
+      - name: Build & Package
         run: |
-          mkdir -p publish/linux-x64
-          dotnet publish AnnoMapEditor/AnnoMapEditor.csproj \
-            -c Release \
-            -r linux-x64 \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:DebugType=embedded \
-            -o publish/linux-x64
-
-      - name: Build Windows
-        run: |
-          mkdir -p publish/win-x64
-          dotnet publish AnnoMapEditor/AnnoMapEditor.csproj \
-            -c Release \
-            -r win-x64 \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:DebugType=embedded \
-            -o publish/win-x64
+          sudo apt-get update && sudo apt-get install -y libfuse2 zip
+          chmod +x tools/build-release.sh
+          ./tools/build-release.sh
 
       - name: Upload Linux Binary
         uses: actions/upload-artifact@v4
         with:
           name: AnnoMapEditor-linux-x64
-          path: publish/linux-x64/AnnoMapEditor
+          path: build/linux-x64/AnnoMapEditor
           retention-days: 5
 
       - name: Upload Windows Binary
         uses: actions/upload-artifact@v4
         with:
           name: AnnoMapEditor-win-x64
-          path: publish/win-x64/AnnoMapEditor.exe
+          path: build/win-x64/AnnoMapEditor.exe
+          retention-days: 5
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnnoMapEditor-x86_64.AppImage
+          path: build/AnnoMapEditor-v*.AppImage
           retention-days: 5
 
       - name: Create Release
@@ -66,8 +55,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            publish/linux-x64/AnnoMapEditor
-            publish/win-x64/AnnoMapEditor.exe
+            build/linux-x64/AnnoMapEditor
+            build/win-x64/AnnoMapEditor.exe
+            build/AnnoMapEditor-v*.AppImage
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,8 +74,9 @@ jobs:
             --title "Latest (v${VERSION})" \
             --notes "Latest build from \`${{ github.sha }}\`" \
             --prerelease \
-            publish/linux-x64/AnnoMapEditor \
-            publish/win-x64/AnnoMapEditor.exe
+            build/linux-x64/AnnoMapEditor \
+            build/win-x64/AnnoMapEditor.exe \
+            build/AnnoMapEditor-v${VERSION}-x86_64.AppImage
 
       - name: Delete old releases (keep 3 latest)
         if: startsWith(github.ref, 'refs/tags/v')
