@@ -55,7 +55,7 @@ game install dir, typically:
 If AppImage doesn't run on your distro:
 
 ```bash
-./AnnoMapEditor          # in publish/linux-x64/ from a release zip
+./AnnoMapEditor          # in build/linux-x64/ from a release zip
 ```
 
 ## Install — Windows
@@ -84,6 +84,15 @@ To produce release binaries:
 ```bash
 ./tools/build-release.sh        # publishes Linux + Windows self-contained
 ./tools/build-appimage.sh       # wraps the Linux build into an AppImage
+```
+
+Both scripts write to `build/`:
+
+```
+build/
+├── linux-x64/AnnoMapEditor                        (~95 MB)
+├── win-x64/AnnoMapEditor.exe                      (~99 MB)
+└── AnnoMapEditor-<version>-x86_64.AppImage        (~41 MB)
 ```
 
 `tools/build-appimage.sh` downloads `appimagetool` automatically on first run.

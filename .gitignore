@@ -171,6 +171,7 @@ DocProject/Help/html
 publish/
 
 # Release artefacts produced by tools/build-release.sh and tools/build-appimage.sh
+build/
 *.AppImage
 appimagetool-*.AppImage
 

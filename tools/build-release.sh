@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build Linux + Windows self-contained binaries.
-# Output:
-#   publish/linux-x64/AnnoMapEditor          (linux executable, ~95 MB)
-#   publish/win-x64/AnnoMapEditor.exe        (windows executable, ~99 MB)
+# Output (everything under one tidy folder, ready to attach to a GitHub release):
+#   build/linux-x64/AnnoMapEditor        (linux executable, ~95 MB)
+#   build/win-x64/AnnoMapEditor.exe      (windows executable, ~99 MB)
 #
 # Run from repo root:  ./tools/build-release.sh
 set -euo pipefail
@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PROJECT="AnnoMapEditor/AnnoMapEditor.csproj"
-PUBLISH_DIR="publish"
+PUBLISH_DIR="build"
 
 rm -rf "$PUBLISH_DIR"
 mkdir -p "$PUBLISH_DIR"

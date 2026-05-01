@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Wrap the linux-x64 publish into a portable AppImage.
-# Run AFTER ./tools/build-release.sh (it expects publish/linux-x64/AnnoMapEditor to exist).
+# Run AFTER ./tools/build-release.sh (it expects build/linux-x64/AnnoMapEditor to exist).
 #
 # Downloads appimagetool on first run if it's not on PATH.
-# Output:  AnnoMapEditor-<version>-x86_64.AppImage  (in the repo root)
+# Output:  build/AnnoMapEditor-<version>-x86_64.AppImage
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-LINUX_BIN="publish/linux-x64/AnnoMapEditor"
+LINUX_BIN="build/linux-x64/AnnoMapEditor"
 if [ ! -x "$LINUX_BIN" ]; then
     echo "Missing $LINUX_BIN — run ./tools/build-release.sh first."
     exit 1
@@ -18,7 +18,7 @@ fi
 VERSION="$(grep -oP '(?<=<Version>)[^<]+' AnnoMapEditor/AnnoMapEditor.csproj | head -1)"
 [ -z "$VERSION" ] && VERSION="0.0.0"
 
-APPDIR="publish/AppDir"
+APPDIR="build/AppDir"
 rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/bin"
 
@@ -61,7 +61,7 @@ fi
 # Locate or download appimagetool.
 APPIMAGETOOL="$(command -v appimagetool || true)"
 if [ -z "$APPIMAGETOOL" ]; then
-    APPIMAGETOOL="publish/appimagetool-x86_64.AppImage"
+    APPIMAGETOOL="build/appimagetool-x86_64.AppImage"
     if [ ! -x "$APPIMAGETOOL" ]; then
         echo "==> Downloading appimagetool"
         curl -L -o "$APPIMAGETOOL" \
@@ -70,7 +70,7 @@ if [ -z "$APPIMAGETOOL" ]; then
     fi
 fi
 
-OUT="AnnoMapEditor-${VERSION}-x86_64.AppImage"
+OUT="build/AnnoMapEditor-${VERSION}-x86_64.AppImage"
 echo "==> Building $OUT"
 ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" "$OUT"
 ls -lh "$OUT"
