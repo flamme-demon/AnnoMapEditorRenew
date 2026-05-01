@@ -54,6 +54,18 @@ jobs:
           path: publish/linux-x64/AnnoMapEditor
           retention-days: 5
 
+      - name: Build AppImage
+        run: |
+          chmod +x tools/build-appimage.sh
+          ./tools/build-appimage.sh
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnnoMapEditor-x86_64.AppImage
+          path: AnnoMapEditor-*.AppImage
+          retention-days: 5
+
       - name: Upload Windows Binary
         uses: actions/upload-artifact@v4
         with:
@@ -68,6 +80,7 @@ jobs:
           files: |
             publish/linux-x64/AnnoMapEditor
             publish/win-x64/AnnoMapEditor.exe
+            AnnoMapEditor-*.AppImage
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
