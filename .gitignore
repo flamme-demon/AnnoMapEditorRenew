@@ -170,10 +170,8 @@ DocProject/Help/html
 # Click-Once directory
 publish/
 
-# Release artefacts produced by tools/build-release.sh and tools/build-appimage.sh
+# Release artefacts produced by tools/build-release.sh
 build/
-*.AppImage
-appimagetool-*.AppImage
 
 # Runtime asset cache
 assets.cached.xml

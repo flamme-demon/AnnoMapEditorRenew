@@ -45,9 +45,8 @@ These features exist in the original WPF app and are not yet ported:
 
 ## Tooling
 
-- **CI**: GitHub Actions to publish a draft release with the three binaries
-  (Linux raw, Linux AppImage, Windows .exe) on every tag.
-- **Icon set** — currently the AppImage ships a 1×1 transparent placeholder.
+- **CI**: GitHub Actions to publish a draft release with the two binaries
+  (Linux, Windows .exe) on every tag.
 - **macOS build** (`osx-arm64` and `osx-x64`) once someone tests it.
 
 ## Notes on Anno 117 quirks discovered

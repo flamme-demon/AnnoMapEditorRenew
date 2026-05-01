@@ -17,9 +17,15 @@ namespace AnnoMapEditor.Utilities
         private static string ResolveVersion()
         {
             // InformationalVersion preserves pre-release suffixes; AssemblyVersion strips them.
+            // Strip the optional "+<commit-sha>" build metadata SemVer allows — only the
+            // user-facing version goes in the UI.
             var asm = Assembly.GetExecutingAssembly();
             string? info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-            if (!string.IsNullOrWhiteSpace(info)) return info;
+            if (!string.IsNullOrWhiteSpace(info))
+            {
+                int plus = info.IndexOf('+');
+                return plus >= 0 ? info.Substring(0, plus) : info;
+            }
             return asm.GetName().Version?.ToString() ?? "0.0.0";
         }
     }

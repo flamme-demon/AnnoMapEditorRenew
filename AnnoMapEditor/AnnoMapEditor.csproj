@@ -19,6 +19,9 @@
     <AssemblyVersion>0.7.0.0</AssemblyVersion>
     <FileVersion>0.7.0.0</FileVersion>
     <InformationalVersion>0.7.0-fork.1</InformationalVersion>
+    <!-- .NET appends "+<commit-sha>" to InformationalVersion by default. Off, so the UI
+         shows the clean semantic version. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

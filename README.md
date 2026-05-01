@@ -28,34 +28,19 @@ Anno 1800 editor.
 
 ## Install — Linux
 
-Two options.
-
-### AppImage (recommended)
-
-Self-contained, no .NET install needed.
+Single self-contained binary (~95 MB). No .NET runtime to install — everything
+is bundled.
 
 ```bash
-chmod +x AnnoMapEditor-0.7.0-fork.1-x86_64.AppImage
-./AnnoMapEditor-0.7.0-fork.1-x86_64.AppImage
+chmod +x AnnoMapEditor
+./AnnoMapEditor
 ```
-
-**Required system packages:**
-- `fuse2` (or `libfuse2`) — to launch the AppImage. On Manjaro/Arch:
-  `sudo pacman -S fuse2`. On Ubuntu/Debian: `sudo apt install libfuse2`.
 
 To run on the Steam version of Anno 117 under Proton: point the editor at the
 game install dir, typically:
 
 ```
 ~/.local/share/Steam/steamapps/compatdata/2980876963/pfx/drive_c/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/games/Anno 117 - Pax Romana/
-```
-
-### Plain executable
-
-If AppImage doesn't run on your distro:
-
-```bash
-./AnnoMapEditor          # in build/linux-x64/ from a release zip
 ```
 
 ## Install — Windows
@@ -82,20 +67,16 @@ dotnet run --project AnnoMapEditor/AnnoMapEditor.csproj
 To produce release binaries:
 
 ```bash
-./tools/build-release.sh        # publishes Linux + Windows self-contained
-./tools/build-appimage.sh       # wraps the Linux build into an AppImage
+./tools/build-release.sh
 ```
 
-Both scripts write to `build/`:
+Output (under `build/`):
 
 ```
 build/
-├── linux-x64/AnnoMapEditor                        (~95 MB)
-├── win-x64/AnnoMapEditor.exe                      (~99 MB)
-└── AnnoMapEditor-<version>-x86_64.AppImage        (~41 MB)
+├── linux-x64/AnnoMapEditor      (~95 MB)
+└── win-x64/AnnoMapEditor.exe    (~99 MB)
 ```
-
-`tools/build-appimage.sh` downloads `appimagetool` automatically on first run.
 
 ## Status
 
