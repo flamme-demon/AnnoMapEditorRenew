@@ -1,0 +1,38 @@
+﻿<UserControl x:Class="AnnoMapEditor.UI.Controls.StatusIndicator"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:converters="clr-namespace:AnnoMapEditor.UI.Converters"
+             xmlns:local="clr-namespace:AnnoMapEditor.UI.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="20" d:DesignWidth="30"
+             x:Name="ThisControl">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:BoolToVisibility x:Key="collapseOnFalse" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+
+    <Grid>
+        <Viewbox>
+            <TextBlock VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="0,-3,0, 2"
+                       Text="✔" Foreground="{StaticResource OkBrush}"
+                       Visibility="{Binding Path=IsOk, ElementName=ThisControl, Converter={StaticResource collapseOnFalse}}"/>
+        </Viewbox>
+        
+        <local:LoadingSpinner VerticalAlignment="Center"
+                   Visibility="{Binding Path=IsLoading, ElementName=ThisControl, Converter={StaticResource collapseOnFalse}}"/>
+        <Viewbox>
+            <TextBlock VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="0,-2,0, 2"
+                       Text="⚠" Foreground="{StaticResource ErrorBrush}"
+                       Visibility="{Binding Path=IsError, ElementName=ThisControl, Converter={StaticResource collapseOnFalse}}"/>
+        </Viewbox>
+    </Grid>
+</UserControl>

@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AnnoMapEditor.BootstrapWindow"
+        Title="Community Map Editor — migration Avalonia en cours"
+        Width="640" Height="360"
+        WindowStartupLocation="CenterScreen">
+    <Grid RowDefinitions="*,Auto" Margin="32">
+        <StackPanel VerticalAlignment="Center" Spacing="12">
+            <TextBlock Text="AnnoMapEditor"
+                       FontSize="28" FontWeight="SemiBold" />
+            <TextBlock Text="Community Map Editor — for Anno 1800 and 117"
+                       Opacity="0.8" />
+            <Border BorderThickness="1" CornerRadius="6"
+                    BorderBrush="{DynamicResource SystemAccentColor}"
+                    Padding="16">
+                <TextBlock TextWrapping="Wrap">
+                    Migration WPF → Avalonia en cours.
+                    Cette fenêtre est temporaire : elle valide que la chaîne de build
+                    cross-platform fonctionne. Les vraies fenêtres seront portées une à une.
+                </TextBlock>
+            </Border>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Text="net10.0 · Avalonia 11"
+                   HorizontalAlignment="Right" Opacity="0.5" />
+    </Grid>
+</Window>

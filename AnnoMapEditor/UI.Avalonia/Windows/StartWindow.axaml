@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AnnoMapEditor.UI.Avalonia.ViewModels"
+        xmlns:l="using:AnnoMapEditor.Utilities"
+        x:Class="AnnoMapEditor.UI.Avalonia.Windows.StartWindow"
+        x:DataType="vm:StartWindowViewModel"
+        Title="{l:L Key=app.title_setup}"
+        Width="720" Height="520"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="32">
+
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="{l:L Key=app.tagline}" FontSize="28" FontWeight="SemiBold" />
+            <TextBlock Text="{l:L Key=app.tagline_sub}" Opacity="0.7" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="18" VerticalAlignment="Center">
+
+            <Border BorderThickness="1" CornerRadius="6" Padding="16"
+                    BorderBrush="{DynamicResource SystemAccentColor}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="{l:L Key=start.game_path}" FontWeight="SemiBold" />
+                    <TextBlock Text="{l:L Key=start.game_path_help}"
+                               TextWrapping="Wrap" Opacity="0.7" FontSize="12" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding GamePath, Mode=TwoWay}"
+                                 Watermark="{l:L Key=start.game_path_watermark}"
+                                 IsEnabled="{Binding !IsInitializing}"
+                                 Margin="0,0,8,0" />
+                        <Button Grid.Column="1"
+                                Content="{l:L Key=start.browse}"
+                                Click="OnBrowseClicked"
+                                IsEnabled="{Binding !IsInitializing}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border BorderThickness="1" CornerRadius="6" Padding="16"
+                    BorderBrush="{DynamicResource SystemBaseLowColor}"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{l:L Key=start.status}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Opacity="0.5" Text="{l:L Key=app.footer}" />
+                <TextBlock Opacity="0.7" FontWeight="SemiBold" x:Name="VersionLabel" />
+            </StackPanel>
+            <ComboBox Grid.Column="1" x:Name="LanguageSelector" Margin="0,0,12,0"
+                      Width="120" SelectionChanged="OnLanguageChanged" />
+            <Button Grid.Column="2" Content="{l:L Key=start.quit}" Click="OnQuitClicked" Margin="0,0,12,0" />
+            <Button Grid.Column="3" Content="{l:L Key=start.continue}"
+                    Classes="accent"
+                    Click="OnContinueClicked"
+                    IsEnabled="{Binding CanContinue}" />
+        </Grid>
+
+    </Grid>
+</Window>
