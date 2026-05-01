@@ -45,6 +45,20 @@ jobs:
             -p:DebugType=embedded \
             -o publish/win-x64
 
+      - name: Upload Linux Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnnoMapEditor-linux-x64
+          path: publish/linux-x64/AnnoMapEditor
+          retention-days: 5
+
+      - name: Upload Windows Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnnoMapEditor-win-x64
+          path: publish/win-x64/AnnoMapEditor.exe
+          retention-days: 5
+
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
