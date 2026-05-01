@@ -86,6 +86,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Update Latest Release
+        if: github.event_name == 'push'
+        run: |
+          VERSION=$(grep -oP '(?<=<Version>)[^<]+' AnnoMapEditor/AnnoMapEditor.csproj | head -1)
+          gh release view latest --repo ${{ github.repository }} >/dev/null 2>&1 && \
+            gh release delete latest --yes || true
+          gh release create latest \
+            --title "Latest (v${VERSION})" \
+            --notes "Latest build from \`${{ github.sha }}\`" \
+            --prerelease \
+            publish/linux-x64/AnnoMapEditor \
+            publish/win-x64/AnnoMapEditor.exe \
+            AnnoMapEditor-*.AppImage
+
       - name: Delete old releases (keep 3 latest)
         if: startsWith(github.ref, 'refs/tags/v')
         env:
