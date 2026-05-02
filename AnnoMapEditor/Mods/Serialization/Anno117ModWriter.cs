@@ -34,7 +34,14 @@ namespace AnnoMapEditor.Mods.Serialization
     /// </summary>
     public class Anno117ModWriter
     {
-        private const FileDBDocumentVersion TargetA7tinfoVersion = FileDBDocumentVersion.Version2;
+        // Vanilla 2048×2048 templates ship as BBDom V2 (Taludas mods do too — proven safe).
+        // Vanilla DLC1 expanded templates (2688×2688) ship as V3 — V2 would not be recognized
+        // for those. We pick the version per-map below.
+        private const FileDBDocumentVersion StandardA7tinfoVersion = FileDBDocumentVersion.Version2;
+        private const FileDBDocumentVersion ExpandedA7tinfoVersion = FileDBDocumentVersion.Version3;
+
+        private static FileDBDocumentVersion PickA7tinfoVersion(MapTemplate t) =>
+            t.Size.X > 2048 ? ExpandedA7tinfoVersion : StandardA7tinfoVersion;
 
         /// <summary>
         /// Names that already exist as vanilla MapTemplateTypes — using one of these would make
@@ -106,9 +113,10 @@ namespace AnnoMapEditor.Mods.Serialization
             if (!isUpdate)
                 await WriteModInfoAsync(modFolder, modName, safeName, templateAsset);
 
-            // 2. .a7tinfo (BBDom V2 — the format Taludas uses, accepted by the engine)
+            // 2. .a7tinfo — V2 for standard 2048 templates (Taludas-compatible), V3 for the
+            // 2688 "expanded" DLC1 layout (engine refuses V2 there).
             string a7tinfoPath = Path.Combine(modFolder, a7tinfoRel.Replace('/', Path.DirectorySeparatorChar));
-            await _mapTemplateWriter.WriteA7tinfoAsync(mapTemplate, a7tinfoPath, TargetA7tinfoVersion);
+            await _mapTemplateWriter.WriteA7tinfoAsync(mapTemplate, a7tinfoPath, PickA7tinfoVersion(mapTemplate));
 
             // 3. .a7te (XML AnnoEditorLevel, FileVersion 4 for Anno 117)
             string a7tePath = Path.Combine(modFolder, a7teRel.Replace('/', Path.DirectorySeparatorChar));
@@ -152,7 +160,7 @@ namespace AnnoMapEditor.Mods.Serialization
             string a7te = Path.Combine(dir, baseName + ".a7te");
             string a7t = Path.Combine(dir, baseName + ".a7t");
 
-            await _mapTemplateWriter.WriteA7tinfoAsync(mapTemplate, a7tinfo, TargetA7tinfoVersion);
+            await _mapTemplateWriter.WriteA7tinfoAsync(mapTemplate, a7tinfo, PickA7tinfoVersion(mapTemplate));
             WriteA7te(mapTemplate.Size.X, a7te);
             WriteA7t(mapTemplate, a7t);
             return dir;
@@ -259,7 +267,7 @@ namespace AnnoMapEditor.Mods.Serialization
             string ambiente = mapTemplate.Session.Region?.Ambiente ?? "Region_map_global";
             Gamedata gameDataItem = new(mapTemplate.Size.X, playableArea, ambiente, true);
 
-            FileDBDocumentSerializer fdbSerializer = new(new() { Version = TargetA7tinfoVersion });
+            FileDBDocumentSerializer fdbSerializer = new(new() { Version = PickA7tinfoVersion(mapTemplate) });
             IFileDBDocument fileDb = fdbSerializer.WriteObjectStructureToFileDBDocument(gameDataItem);
 
             using MemoryStream fileDbStream = new();

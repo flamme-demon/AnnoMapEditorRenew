@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:AnnoMapEditor.Utilities"
+        x:Class="AnnoMapEditor.UI.Avalonia.Windows.IslandPickerDialog"
+        Title="{l:L Key=picker.title}"
+        Width="900" Height="640"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+            <TextBlock x:Name="Header" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" />
+
+            <!-- Three-state filter: All / Random / Fixed. Mutually exclusive — clicking
+                 one untoggles the others (handled in code-behind). -->
+            <StackPanel Orientation="Horizontal" Spacing="0">
+                <ToggleButton x:Name="FilterAll" Content="{l:L Key=picker.filter_all}"
+                              IsChecked="True" Click="OnFilterModeClicked"
+                              CornerRadius="4,0,0,4" Padding="10,4" />
+                <ToggleButton x:Name="FilterRandom" Content="{l:L Key=picker.filter_random}"
+                              Click="OnFilterModeClicked"
+                              CornerRadius="0" Padding="10,4" />
+                <ToggleButton x:Name="FilterFixed" Content="{l:L Key=picker.filter_fixed}"
+                              Click="OnFilterModeClicked"
+                              CornerRadius="0,4,4,0" Padding="10,4" />
+            </StackPanel>
+
+            <TextBox x:Name="FilterBox" Width="220"
+                     Watermark="{l:L Key=picker.filter}"
+                     TextChanged="OnFilterChanged" />
+            <TextBlock x:Name="CountLabel" Opacity="0.6" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="Grid">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="8" Margin="0,12,0,0">
+            <Button Content="{l:L Key=picker.cancel}" Click="OnCancel" />
+        </StackPanel>
+    </Grid>
+</Window>

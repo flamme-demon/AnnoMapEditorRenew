@@ -9,6 +9,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml;
 using AnnoMapEditor.Utilities;
+using AnnoMods.BBDom;
+using AnnoMods.BBDom.ObjectSerializer;
 
 namespace AnnoMapEditor.MapTemplates.Serializing
 {
@@ -23,8 +25,10 @@ namespace AnnoMapEditor.MapTemplates.Serializing
         {
             return await Task.Run(() =>
             {
-                // Buffer the stream so we can rewind and retry with multiple versions.
-                // Anno 1800 uses V1; Anno 117 uses V2/V3.
+                // BBDocument.LoadStream auto-detects V1/V2/V3 internally. We then deserialize
+                // from the parsed document into the typed model — this path uses AnnoMods.BBDom
+                // exclusively (no FileDBSerializer fallback), so our new BBDom-native model
+                // types (with AnnoMods.BBDom.EncodingAwareStrings.Unicode/UTF8String) work.
                 byte[] buffer;
                 using (var ms = new MemoryStream())
                 {
@@ -32,72 +36,48 @@ namespace AnnoMapEditor.MapTemplates.Serializing
                     stream.CopyTo(ms);
                     buffer = ms.ToArray();
                 }
-
-                FileDBDocumentVersion[] versionsToTry;
                 try
                 {
-                    using var detect = new MemoryStream(buffer);
-                    var detected = VersionDetector.GetCompressionVersion(detect);
-                    versionsToTry = OrderedVersionsStartingWith(detected);
+                    using var versionStream = new MemoryStream(buffer);
+                    var bbVersion = AnnoMods.BBDom.IO.VersionDetector.GetCompressionVersion(versionStream);
+                    LastReadVersion = BBToFileDBVersion(bbVersion);
                 }
-                catch
-                {
-                    versionsToTry = new[]
-                    {
-                        FileDBDocumentVersion.Version1,
-                        FileDBDocumentVersion.Version2,
-                        FileDBDocumentVersion.Version3
-                    };
-                }
+                catch { /* leave LastReadVersion at last value */ }
 
-                Exception? lastError = null;
-                foreach (var version in versionsToTry)
+                try
                 {
-                    try
-                    {
-                        using var attemptStream = new MemoryStream(buffer);
-                        var result = FileDBConvert.DeserializeObject<T>(attemptStream,
-                            new FileDBSerializerOptions
-                            {
-                                Version = version,
-                                IgnoreMissingProperties = true
-                            });
-                        if (result != null)
-                        {
-                            LastReadVersion = version;
-                            return result;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        lastError = e;
-                    }
+                    using var docStream = new MemoryStream(buffer);
+                    var doc = BBDocument.LoadStream(docStream);
+                    return BBConvert.DeserializeObjectFromDocument<T>(doc,
+                        new BBSerializerOptions { IgnoreMissingProperties = true });
                 }
-
-                if (lastError != null)
+                catch (Exception e)
                 {
                     int peekLen = Math.Min(32, buffer.Length);
                     string hex = string.Join(" ", buffer.Take(peekLen).Select(b => b.ToString("X2")));
-                    string ascii = new string(buffer.Take(peekLen).Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
-                    _logger.LogError($"All FileDB versions failed. Last: {lastError.Message}");
+                    _logger.LogError($"BBDom read failed: {e.Message}");
                     _logger.LogError($"  bytes (hex):   {hex}");
-                    _logger.LogError($"  bytes (ascii): {ascii}");
                     _logger.LogError($"  total size:    {buffer.Length} bytes");
+                    return null;
                 }
-                return null;
             });
         }
 
-        private static FileDBDocumentVersion[] OrderedVersionsStartingWith(FileDBDocumentVersion first)
+        private static FileDBDocumentVersion BBToFileDBVersion(BBDocumentVersion v) => v switch
         {
-            var all = new[]
-            {
-                FileDBDocumentVersion.Version1,
-                FileDBDocumentVersion.Version2,
-                FileDBDocumentVersion.Version3
-            };
-            return all.OrderBy(v => v == first ? 0 : 1).ToArray();
-        }
+            BBDocumentVersion.V1 => FileDBDocumentVersion.Version1,
+            BBDocumentVersion.V2 => FileDBDocumentVersion.Version2,
+            BBDocumentVersion.V3 => FileDBDocumentVersion.Version3,
+            _ => FileDBDocumentVersion.Version1
+        };
+
+        private static BBDocumentVersion FileDBToBBVersion(FileDBDocumentVersion v) => v switch
+        {
+            FileDBDocumentVersion.Version1 => BBDocumentVersion.V1,
+            FileDBDocumentVersion.Version2 => BBDocumentVersion.V2,
+            FileDBDocumentVersion.Version3 => BBDocumentVersion.V3,
+            _ => BBDocumentVersion.V1
+        };
 
         public static async Task<T?> ReadFromXmlAsync<T>(Stream stream) where T : class, new()
         {
@@ -136,58 +116,19 @@ namespace AnnoMapEditor.MapTemplates.Serializing
         {
             await Task.Run(() =>
             {
-                // For V3 (Anno 117), try the rewritten AnnoMods.BBDom library first — it has a
-                // dedicated V3 writer (BBStructureWriter_V3). If it fails (incompatible attribute
-                // schema with the legacy Anno.FileDBModels.dll), we fall back to the legacy
-                // serializer so at least a non-empty file is written.
-                if (version == FileDBDocumentVersion.Version3)
-                {
-                    try
-                    {
-                        WriteAsBBDomV3(data, stream);
-                        return;
-                    }
-                    catch (Exception bbEx)
-                    {
-                        Exception unwrapped = bbEx is System.Reflection.TargetInvocationException tie && tie.InnerException != null
-                            ? tie.InnerException
-                            : bbEx;
-                        _logger.LogWarning($"BBDom V3 writer failed ({unwrapped.GetType().Name}: {unwrapped.Message}) — falling back to legacy V3.");
-                        try { stream.Seek(0, SeekOrigin.Begin); stream.SetLength(0); } catch { }
-                    }
-                }
-
                 try
                 {
-                    FileDBConvert.SerializeObject(data, new() { Version = version }, stream);
+                    // BBConvert serializes our BBDom-native model directly. EnlargementOffset
+                    // is a regular property on MapTemplate now, so no post-processing needed.
+                    BBConvert.SerializeObject(data,
+                        new BBSerializerOptions { Version = FileDBToBBVersion(version) },
+                        stream);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError($"{e.Message} \n {e.StackTrace}");
                 }
             });
-        }
-
-        private static void WriteAsBBDomV3(object data, Stream stream)
-        {
-            var bbConvertType = Type.GetType("AnnoMods.BBDom.ObjectSerializer.BBConvert, AnnoMods.BBDom");
-            var optionsType   = Type.GetType("AnnoMods.BBDom.ObjectSerializer.BBSerializerOptions, AnnoMods.BBDom");
-            var versionEnum   = Type.GetType("AnnoMods.BBDom.BBDocumentVersion, AnnoMods.BBDom");
-
-            if (bbConvertType is null || optionsType is null || versionEnum is null)
-                throw new InvalidOperationException("AnnoMods.BBDom not loaded.");
-
-            object opts = Activator.CreateInstance(optionsType)!;
-            optionsType.GetProperty("Version")?.SetValue(opts, Enum.Parse(versionEnum, "V3"));
-            var ignoreProp = optionsType.GetProperty("IgnoreMissingProperties");
-            if (ignoreProp != null) ignoreProp.SetValue(opts, true);
-
-            var openMethod = bbConvertType.GetMethods()
-                .First(m => m.Name == "SerializeObject"
-                            && m.IsGenericMethodDefinition
-                            && m.GetParameters().Length == 3);
-            var closedMethod = openMethod.MakeGenericMethod(data.GetType());
-            closedMethod.Invoke(null, new object[] { data, opts, stream });
         }
 
         public static async Task WriteToXmlAsync(object data, Stream stream)

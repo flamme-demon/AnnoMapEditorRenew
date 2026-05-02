@@ -17,6 +17,14 @@ namespace AnnoMapEditor
         public string? Xpath { get; set; }
         public bool Quickstart { get; set; }
 
+        /// <summary>CSV of DLC filter ids the user has switched OFF in the maps panel.</summary>
+        public string? DisabledDlcFilters { get; set; }
+
+        /// <summary>Global MapView canvas rotation in degrees — applied to every map the user
+        /// opens so the editor stays aligned with the in-game view. Default -45° = the in-game
+        /// isometric diamond orientation (north pointing up). 0° = flat top-down view.</summary>
+        public int MapViewRotationDeg { get; set; } = -45;
+
         // Window state persistence
         public double? MainWindowWidth { get; set; }
         public double? MainWindowHeight { get; set; }

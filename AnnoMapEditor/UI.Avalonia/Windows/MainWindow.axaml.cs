@@ -14,6 +14,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using AnnoMapEditor.DataArchives;
 using AnnoMapEditor.DataArchives.Assets.Models;
+using AnnoMapEditor.MapTemplates;
 using AnnoMapEditor.MapTemplates.Enums;
 using AnnoMapEditor.MapTemplates.Models;
 using AnnoMapEditor.MapTemplates.Serializing;
@@ -31,7 +32,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
     {
         private TextBlock? _gameTitle;
         private TextBlock? _mapsCountLabel;
-        private ListBox? _mapsList;
+        private TreeView? _mapsList;
         private TextBlock? _mapDetailTitle;
         private TextBlock? _mapDetailSubtitle;
         private TextBlock? _statSize;
@@ -48,6 +49,16 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         private Button? _redoButton;
         private TreeView? _elementsTree;
         private bool _suppressTreeEvents;
+        private Border? _sessionPropsPanel;
+        private TextBlock? _sessionRegionLabel;
+        private TextBlock? _sessionMapSizeLabel;
+        private Slider? _sessionPaSlider;
+        private TextBlock? _sessionPaSizeLabel;
+        private CheckBox? _sessionEditPaToggle;
+        private NumericUpDown? _paX1Box, _paY1Box, _paX2Box, _paY2Box;
+        private (int x1, int y1, int x2, int y2)? _originalPlayableArea;
+        private bool _suppressSessionPaSlider;
+        private StackPanel? _issuesPanel;
         private List<MapListItem> _allMaps = new();
         private readonly ObservableCollection<DlcFilter> _filters = new();
 
@@ -65,7 +76,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             AvaloniaXamlLoader.Load(this);
             _gameTitle = this.FindControl<TextBlock>("GameTitle");
             _mapsCountLabel = this.FindControl<TextBlock>("MapsCountLabel");
-            _mapsList = this.FindControl<ListBox>("MapsList");
+            _mapsList = this.FindControl<TreeView>("MapsList");
             _mapDetailTitle = this.FindControl<TextBlock>("MapDetailTitle");
             _mapDetailSubtitle = this.FindControl<TextBlock>("MapDetailSubtitle");
             _statSize = this.FindControl<TextBlock>("StatSize");
@@ -80,11 +91,28 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             _undoButton = this.FindControl<Button>("UndoButton");
             _redoButton = this.FindControl<Button>("RedoButton");
             _elementsTree = this.FindControl<TreeView>("ElementsTree");
+            _sessionPropsPanel = this.FindControl<Border>("SessionPropsPanel");
+            _sessionRegionLabel = this.FindControl<TextBlock>("SessionRegionLabel");
+            _sessionMapSizeLabel = this.FindControl<TextBlock>("SessionMapSizeLabel");
+            _sessionPaSlider = this.FindControl<Slider>("SessionPaSlider");
+            _sessionPaSizeLabel = this.FindControl<TextBlock>("SessionPaSizeLabel");
+            _sessionEditPaToggle = this.FindControl<CheckBox>("SessionEditPaToggle");
+            _issuesPanel = this.FindControl<StackPanel>("IssuesPanel");
+            _paX1Box = this.FindControl<NumericUpDown>("PaX1Box");
+            _paY1Box = this.FindControl<NumericUpDown>("PaY1Box");
+            _paX2Box = this.FindControl<NumericUpDown>("PaX2Box");
+            _paY2Box = this.FindControl<NumericUpDown>("PaY2Box");
             _actionButtons = this.FindControl<StackPanel>("ActionButtons");
             _rotateButton = this.FindControl<Button>("RotateButton");
             _saveModButton = this.FindControl<Button>("SaveModButton");
             if (_dlcFilters != null) _dlcFilters.ItemsSource = _filters;
-            if (_mapRenderer != null) _mapRenderer.ElementSelected += OnMapElementSelected;
+            if (_mapRenderer != null)
+            {
+                _mapRenderer.ElementSelected += OnMapElementSelected;
+                _mapRenderer.ElementMoveCommitted += OnElementMoveCommitted;
+                _mapRenderer.PlayableAreaResizing += OnPlayableAreaResizing;
+                _mapRenderer.PlayableAreaResized += OnPlayableAreaResized;
+            }
             if (_historyList != null)
                 _historyList.ItemsSource = UndoRedoStack.Instance.UndoHistory;
             UndoRedoStack.Instance.PropertyChanged += (_, __) => RefreshUndoRedoButtons();
@@ -142,6 +170,8 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 f.PropertyChanged -= OnFilterChanged;
             _filters.Clear();
 
+            var disabled = Settings.Instance.DisabledDlcFilters;
+
             // "Base" first, then sorted DLCs
             var distinct = _allMaps
                 .Select(m => m.DlcId)
@@ -151,7 +181,9 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
 
             foreach (string id in distinct)
             {
-                var f = new DlcFilter(id) { IsEnabled = true };
+                // Restore the toggle state from disk so the user's last choice
+                // persists across sessions.
+                var f = new DlcFilter(id) { IsEnabled = !disabled.Contains(id) };
                 f.PropertyChanged += OnFilterChanged;
                 _filters.Add(f);
             }
@@ -159,8 +191,12 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
 
         private void OnFilterChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(DlcFilter.IsEnabled))
-                ApplyDlcFilters();
+            if (e.PropertyName != nameof(DlcFilter.IsEnabled)) return;
+            // Persist the new disabled set, then refresh the visible map list.
+            Settings.Instance.DisabledDlcFilters = new System.Collections.Generic.HashSet<string>(
+                _filters.Where(f => !f.IsEnabled).Select(f => f.Id),
+                System.StringComparer.OrdinalIgnoreCase);
+            ApplyDlcFilters();
         }
 
         private void ApplyDlcFilters()
@@ -168,17 +204,51 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (_mapsList is null) return;
             HashSet<string> enabled = new(_filters.Where(f => f.IsEnabled).Select(f => f.Id));
             var filtered = _allMaps.Where(m => enabled.Contains(m.DlcId)).ToList();
-            _mapsList.ItemsSource = filtered;
+
+            // Build a hierarchy:
+            //   - Mods that ship multiple maps → one expandable group per mod folder
+            //     (Header = mod name, Children = each .a7tinfo).
+            //   - Mods with a single map and all vanilla maps → flat leaves.
+            var entries = new System.Collections.Generic.List<MapListEntry>();
+
+            var modGroups = filtered
+                .Where(m => m.IsMod && m.ModFolderName != null)
+                .GroupBy(m => m.ModFolderName!)
+                .OrderBy(g => g.Key);
+            foreach (var g in modGroups)
+            {
+                if (g.Count() == 1)
+                {
+                    entries.Add(new MapListEntry(g.First()));
+                }
+                else
+                {
+                    var group = new MapListEntry(
+                        $"⚙ {g.Key}",
+                        $"Mod · {g.Count()} cartes");
+                    foreach (var item in g.OrderBy(i => i.DisplayName))
+                        group.Children.Add(new MapListEntry(item));
+                    entries.Add(group);
+                }
+            }
+
+            // Vanilla maps stay flat (sorted as before).
+            foreach (var m in filtered.Where(m => !m.IsMod))
+                entries.Add(new MapListEntry(m));
+
+            _mapsList.ItemsSource = entries;
             if (_mapsCountLabel != null)
                 _mapsCountLabel.Text = $"{filtered.Count} / {_allMaps.Count} cartes";
         }
 
         private async void OnMapSelected(object? sender, SelectionChangedEventArgs e)
         {
-            if (_mapsList?.SelectedItem is not MapListItem item)
+            // The TreeView selection can be either a leaf (a real MapListItem) or a group
+            // header. We only act on leaves; clicking a group just expands/collapses it.
+            if (_mapsList?.SelectedItem is not MapListEntry entry || entry.Item is null)
                 return;
 
-            await LoadMapDetailAsync(item);
+            await LoadMapDetailAsync(entry.Item);
         }
 
         private async Task LoadMapDetailAsync(MapListItem item)
@@ -217,6 +287,8 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                     UndoRedoStack.Instance.ClearStacks();
                     _mapRenderer?.SetMap(map);
                     RebuildElementsTree();
+                    PopulatePlayableAreaSection();
+                    RefreshIssuesPanel();
                     if (_saveModButton != null) _saveModButton.IsEnabled = true;
                     RefreshUndoRedoButtons();
                     if (_statusBar != null)
@@ -364,15 +436,30 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 // Position (read-only display, modifiable via drag)
                 host.Children.Add(ReadOnlyRow("Position", $"({element.Position.X}, {element.Position.Y})"));
 
-                // IslandType — editable for IslandElement
+                // IslandType — editable for IslandElement, IslandSize — editable for RandomIslandElement.
+                // The two combos are wired together below: when the type changes, we re-fill the size
+                // combo so ExtraLarge only appears for Starter (the only context Anno 117 uses 0300 in).
+                ComboBox? sizeCombo = null;
+                Action? rebuildSizeOptions = null;
+
                 if (element is IslandElement island)
                 {
-                    var typeCombo = new ComboBox { Width = 160 };
+                    // Continental fixed assets must always export with Type=null — the engine
+                    // refuses Type=Starter (and anything else) on the unique DLC1 continental
+                    // and falls back to a single-fertility default. Disable the combo on those
+                    // assets so the user can't pick something we'd silently override at write.
+                    bool isContinentalFixed = island is FixedIslandElement fxIsl
+                        && fxIsl.IslandAsset?.FilePath?.Contains("continental",
+                            System.StringComparison.OrdinalIgnoreCase) == true;
+
+                    var typeCombo = new ComboBox { Width = 160, IsEnabled = !isContinentalFixed };
                     foreach (var t in IslandType.All) typeCombo.Items.Add(t);
                     typeCombo.SelectedItem = island.IslandType ?? IslandType.Normal;
-                    ToolTip.SetTip(typeCombo,
-                        "Rôle de l'île dans la session (jouable / NPC / déco). " +
-                        "Le biome visuel (volcanique, neige…) vient du fichier .a7m, pas de ce champ.");
+                    ToolTip.SetTip(typeCombo, isContinentalFixed
+                        ? "Le moteur Anno 117 force Type=null sur les continentales (Vésuve). " +
+                          "Toute autre valeur casse le binding FertilitySet → fertilité Obsidian unique."
+                        : "Rôle de l'île dans la session (jouable / NPC / déco). " +
+                          "Le biome visuel (volcanique, neige…) vient du fichier .a7m, pas de ce champ.");
                     typeCombo.SelectionChanged += (_, _) =>
                     {
                         if (_suppressPropertyEvents) return;
@@ -382,18 +469,47 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                         island.IslandType = newType;
                         UndoRedoStack.Instance.Do(new IslandPropertiesStackEntry(
                             island, oldIslandType: oldType, newIslandType: newType));
+                        // Refresh the size combo so ExtraLarge appears/disappears for this type.
+                        rebuildSizeOptions?.Invoke();
                         RefreshAfterEdit();
                         RefreshUndoRedoButtons();
                     };
                     host.Children.Add(LabeledRow("Type (rôle)", typeCombo));
                 }
 
-                // IslandSize — editable for RandomIslandElement
                 if (element is RandomIslandElement random)
                 {
-                    var sizeCombo = new ComboBox { Width = 160 };
-                    foreach (var s in IslandSize.All) sizeCombo.Items.Add(s);
-                    sizeCombo.SelectedItem = random.IslandSize;
+                    sizeCombo = new ComboBox { Width = 160 };
+
+                    // (Re)build the size options based on the element's current IslandType.
+                    // ExtraLarge is only valid for Starter (vanilla never uses 0300 elsewhere);
+                    // Continental never appears as a random <Size> bucket.
+                    rebuildSizeOptions = () =>
+                    {
+                        if (sizeCombo is null) return;
+                        _suppressPropertyEvents = true;
+                        try
+                        {
+                            sizeCombo.Items.Clear();
+                            bool isStarter = (random.IslandType ?? IslandType.Normal) == IslandType.Starter;
+                            foreach (var s in IslandSize.All)
+                            {
+                                if (s == IslandSize.Continental) continue;
+                                if (s == IslandSize.ExtraLarge && !isStarter) continue;
+                                sizeCombo.Items.Add(s);
+                            }
+                            // Keep the current size selected if still allowed; otherwise fall back
+                            // to the closest allowed bucket (Large for ExtraLarge, etc.).
+                            var current = random.IslandSize;
+                            if (sizeCombo.Items.Contains(current))
+                                sizeCombo.SelectedItem = current;
+                            else
+                                sizeCombo.SelectedItem = IslandSize.Large;
+                        }
+                        finally { _suppressPropertyEvents = false; }
+                    };
+                    rebuildSizeOptions();
+
                     sizeCombo.SelectionChanged += (_, _) =>
                     {
                         if (_suppressPropertyEvents) return;
@@ -415,13 +531,27 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                     AddBoolCheckbox(host, "Random rotation",
                         fixedIsland.RandomizeRotation,
                         v => SetFixedFlag(fixedIsland, randomizeRotation: v));
+                    // When the user opts out of random rotation, surface a manual selector
+                    // so they can pin a specific 0/90/180/270 angle.
+                    if (!fixedIsland.RandomizeRotation)
+                        BuildManualRotationEditor(host, fixedIsland);
+
                     AddBoolCheckbox(host, "Random fertilities",
                         fixedIsland.RandomizeFertilities,
                         v => SetFixedFlag(fixedIsland, randomizeFertilities: v));
+                    if (!fixedIsland.RandomizeFertilities)
+                        BuildManualFertilitiesEditor(host, fixedIsland);
+
                     AddBoolCheckbox(host, "Random slots",
                         fixedIsland.RandomizeSlots,
                         v => SetFixedFlag(fixedIsland, randomizeSlots: v));
+                    if (!fixedIsland.RandomizeSlots)
+                        BuildManualSlotsEditor(host, fixedIsland);
                 }
+
+                // Replace section: convert between Random and Fixed at the same position.
+                if (element is IslandElement islForReplace)
+                    BuildReplaceSection(host, islForReplace);
 
                 // Read-only details below
                 host.Children.Add(SectionHeader("Détails"));
@@ -476,6 +606,334 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 randomizeFertilities: randomizeFertilities,
                 randomizeSlots: randomizeSlots));
             RefreshUndoRedoButtons();
+            // Rebuild the panel so the matching manual editor (rotation / fertilities /
+            // slots) appears or disappears.
+            OnMapElementSelected(this, fi);
+        }
+
+        // ------------------- Manual editors (when randomize flags are off) -------------------
+
+        private void BuildManualRotationEditor(StackPanel host, FixedIslandElement fi)
+        {
+            var combo = new ComboBox { Width = 160 };
+            foreach (var deg in new[] { 0, 90, 180, 270 })
+                combo.Items.Add($"{deg}°");
+            byte current = fi.Rotation ?? 0;
+            combo.SelectedIndex = current % 4;
+            combo.SelectionChanged += (_, _) =>
+            {
+                if (_suppressPropertyEvents) return;
+                if (combo.SelectedIndex < 0) return;
+                byte newRot = (byte)combo.SelectedIndex;
+                byte oldRot = fi.Rotation ?? 0;
+                if (oldRot == newRot) return;
+                fi.Rotation = newRot;
+                UndoRedoStack.Instance.Do(new MapElementTransformStackEntry(
+                    fi, fi.Position, fi.Position, oldRot, newRot));
+                RefreshAfterEdit();
+                RefreshUndoRedoButtons();
+            };
+            host.Children.Add(LabeledRow("Rotation", combo));
+        }
+
+        private void BuildManualFertilitiesEditor(StackPanel host, FixedIslandElement fi)
+        {
+            var allowed = _currentMap?.Session?.Region?.AllowedFertilities
+                          ?? new List<FertilityAsset>();
+            if (allowed.Count == 0)
+            {
+                host.Children.Add(new TextBlock
+                {
+                    Text = "(no fertilities listed for this region)",
+                    Opacity = 0.6, FontSize = 11, Margin = new Thickness(0, 2, 0, 4)
+                });
+                return;
+            }
+            host.Children.Add(new TextBlock
+            {
+                Text = "Fertilities (toggle to assign):",
+                Opacity = 0.6, FontSize = 11, Margin = new Thickness(0, 2, 0, 4)
+            });
+            foreach (var fertility in allowed.OrderBy(f => LocalizedFertilityName(f)))
+            {
+                host.Children.Add(BuildFertilityToggleRow(fi, fertility));
+            }
+        }
+
+        // One row = real Anno icon (or category swatch if missing) + localized name +
+        // ToggleSwitch on the right.
+        private Control BuildFertilityToggleRow(FixedIslandElement fi, FertilityAsset fertility)
+        {
+            bool isAssigned = fi.Fertilities.Contains(fertility);
+
+            // Try to load the real game icon from the .rda archive (Pfim already handles
+            // .dds → Avalonia bitmap conversion). Cache it on the asset itself so we only
+            // pay the I/O cost the first time the user opens the editor for a region.
+            Control swatch = TryLoadFertilityIcon(fertility) ?? (Control)new Border
+            {
+                Width = 16, Height = 16,
+                CornerRadius = new CornerRadius(2),
+                Background = ResolveFertilityCategoryColor(fertility),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var label = new TextBlock
+            {
+                Text = LocalizedFertilityName(fertility),
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0)
+            };
+            var toggle = new ToggleSwitch
+            {
+                IsChecked = isAssigned,
+                OnContent = "",
+                OffContent = "",
+                Padding = new Thickness(0),
+                MinWidth = 0
+            };
+            toggle.IsCheckedChanged += (_, _) =>
+            {
+                if (_suppressPropertyEvents) return;
+                bool nowChecked = toggle.IsChecked == true;
+                bool wasAssigned = fi.Fertilities.Contains(fertility);
+                if (nowChecked == wasAssigned) return;
+                if (nowChecked) fi.Fertilities.Add(fertility);
+                else fi.Fertilities.Remove(fertility);
+                UndoRedoStack.Instance.Do(new IslandFertilitiesStackEntry(
+                    fi, added: nowChecked, fertility));
+                RefreshUndoRedoButtons();
+            };
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                Margin = new Thickness(0, 2)
+            };
+            Grid.SetColumn(swatch, 0); grid.Children.Add(swatch);
+            Grid.SetColumn(label, 1);  grid.Children.Add(label);
+            Grid.SetColumn(toggle, 2); grid.Children.Add(toggle);
+            return grid;
+        }
+
+        /// <summary>Looks up "fertility.&lt;Name without 'Fertility '/'Deposit ' prefix&gt;"
+        /// in the i18n table and falls back to the asset's English DisplayName when no
+        /// translation exists. Asset names come prefixed (e.g. "Fertility Oats",
+        /// "Deposit Iron") — we strip those so the JSON keys can stay short and readable.</summary>
+        private static string LocalizedFertilityName(FertilityAsset f)
+        {
+            string raw = f.Name ?? "";
+            string stripped = raw;
+            if (raw.StartsWith("Fertility ", System.StringComparison.OrdinalIgnoreCase))
+                stripped = raw.Substring("Fertility ".Length);
+            else if (raw.StartsWith("Deposit ", System.StringComparison.OrdinalIgnoreCase))
+                stripped = raw.Substring("Deposit ".Length);
+
+            string key = $"fertility.{stripped}";
+            string translated = Localizer.Current.Get(key);
+            return translated == key ? (f.DisplayName ?? f.Name ?? "?") : translated;
+        }
+
+        /// <summary>
+        /// Resolve the real Anno fertility/deposit icon by reading IconFilename from the
+        /// .rda archive (the same path the game uses). Cached on the asset so we don't
+        /// re-decode the .dds on every panel rebuild. Returns null when the icon path
+        /// is missing or the archive can't open it (e.g. mod-only run with no game data).
+        /// </summary>
+        private static Control? TryLoadFertilityIcon(FertilityAsset f)
+        {
+            try
+            {
+                if (f.Icon is null && !string.IsNullOrEmpty(f.IconFilename)
+                    && DataManager.Instance.IsInitialized)
+                {
+                    f.Icon = DataManager.Instance.DataArchive.TryLoadIcon(
+                        f.IconFilename, new global::Avalonia.PixelSize(32, 32));
+                }
+                if (f.Icon is null) return null;
+                return new Image
+                {
+                    Source = f.Icon,
+                    Width = 20, Height = 20,
+                    Stretch = global::Avalonia.Media.Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+            }
+            catch { return null; }
+        }
+
+        /// <summary>Fallback color hint when the .rda icon cannot be loaded — e.g. when
+        /// running on a snapshot without game data.</summary>
+        private static IBrush ResolveFertilityCategoryColor(FertilityAsset f)
+        {
+            string n = (f.Name ?? "").ToLowerInvariant();
+            if (n.Contains("deposit") || n.Contains("iron") || n.Contains("coal")
+                || n.Contains("clay") || n.Contains("marble") || n.Contains("mineral")
+                || n.Contains("gold") || n.Contains("tin") || n.Contains("copper")
+                || n.Contains("silver") || n.Contains("granite") || n.Contains("obsidian"))
+                return new SolidColorBrush(Color.Parse("#9E9E9E"));    // mine / deposit — grey
+            if (n.Contains("fish") || n.Contains("sardin") || n.Contains("mackerel")
+                || n.Contains("oyster") || n.Contains("snail") || n.Contains("sturgeon")
+                || n.Contains("samphire") || n.Contains("shell"))
+                return new SolidColorBrush(Color.Parse("#3FA7E6"));    // sea — blue
+            if (n.Contains("beaver") || n.Contains("bird") || n.Contains("ponies")
+                || n.Contains("sheep"))
+                return new SolidColorBrush(Color.Parse("#B07A48"));    // animal — brown
+            return new SolidColorBrush(Color.Parse("#6FE07F"));        // crop — green
+        }
+
+        private void BuildManualSlotsEditor(StackPanel host, FixedIslandElement fi)
+        {
+            int totalAssignments = fi.SlotAssignments.Count;
+            int totalIslandSlots = fi.IslandAsset?.Slots?.Count ?? 0;
+
+            // Slots = mines, deposits, rivers/waterfalls, volcanoes, oil — every "random
+            // pickable" object the engine places at map gen. They live in the .a7minfo
+            // sibling of each .a7m, under <ObjectMetaInfo><SlotObjects>. If both counts
+            // are zero, it just means this terrain doesn't define any.
+            if (totalIslandSlots == 0)
+            {
+                host.Children.Add(new TextBlock
+                {
+                    Text = "This island has no random slots (mines, rivers, volcanoes…)\n"
+                           + "in its .a7minfo, so there's nothing to fix manually.",
+                    Opacity = 0.6, FontSize = 11, TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 2, 0, 4)
+                });
+                return;
+            }
+
+            host.Children.Add(new TextBlock
+            {
+                Text = $"Slots ({totalAssignments} / {totalIslandSlots}):",
+                Opacity = 0.7, FontSize = 11, FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 2, 0, 4)
+            });
+
+            if (totalAssignments == 0)
+            {
+                host.Children.Add(new TextBlock
+                {
+                    Text = "(no slot assignments yet — they'll be populated on save)",
+                    Opacity = 0.6, FontSize = 11, Margin = new Thickness(0, 0, 0, 4)
+                });
+                return;
+            }
+
+            // Show every assignment, even when the resolved SlotAsset is null — without
+            // a label we still display the ObjectId so the user knows something exists.
+            foreach (var entry in fi.SlotAssignments.Values
+                .OrderBy(a => a.Slot?.SlotAsset?.DisplayName
+                              ?? a.Slot?.SlotAsset?.Name
+                              ?? a.Slot?.ObjectId.ToString()
+                              ?? ""))
+            {
+                host.Children.Add(BuildSlotRow(entry));
+            }
+        }
+
+        // One row per slot: icon + default name + ComboBox listing "(default)" plus the
+        // replacement options the engine accepts (Slot.SlotAsset.ReplacementSlotAssets).
+        private Control BuildSlotRow(SlotAssignment assignment)
+        {
+            // Slot.SlotAsset can be null when the island has slots referenced by GUIDs
+            // that aren't in the loaded assets.xml (DLC mismatch, etc.). Render a minimal
+            // row so the user still sees the slot exists.
+            var defaultSlot = assignment.Slot?.SlotAsset;
+            // "(default)" sentinel used as ComboBox item — IslandAsset = null distinguishes it.
+            var defaultMarker = new SlotAsset();
+            var options = new List<SlotAsset> { defaultMarker };
+            if (defaultSlot != null)
+                options.AddRange(defaultSlot.ReplacementSlotAssets ?? Array.Empty<SlotAsset>());
+
+            Control icon = (defaultSlot != null ? TryLoadSlotIcon(defaultSlot) : null)
+                ?? (Control)new Border
+                {
+                    Width = 16, Height = 16,
+                    CornerRadius = new CornerRadius(2),
+                    Background = new SolidColorBrush(Color.Parse("#9E9E9E")),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+            var nameBlock = new TextBlock
+            {
+                Text = defaultSlot?.DisplayName
+                       ?? defaultSlot?.Name
+                       ?? $"slot #{assignment.Slot?.ObjectId}",
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 8, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+
+            var combo = new ComboBox { Width = 140, FontSize = 11 };
+            foreach (var opt in options) combo.Items.Add(opt);
+            combo.ItemTemplate = new global::Avalonia.Controls.Templates.FuncDataTemplate<SlotAsset>(
+                (s, _) =>
+                {
+                    if (s is null) return new TextBlock();
+                    bool isDefault = ReferenceEquals(s, defaultMarker);
+                    return new TextBlock
+                    {
+                        Text = isDefault ? "(default)" : (s.DisplayName ?? s.Name ?? "?"),
+                        FontStyle = isDefault
+                            ? global::Avalonia.Media.FontStyle.Italic
+                            : global::Avalonia.Media.FontStyle.Normal,
+                        FontSize = 11
+                    };
+                });
+            // Pre-select: default if AssignedSlot is null or equals the original; otherwise
+            // the actual replacement.
+            int initialIndex = 0;
+            if (assignment.AssignedSlot is { } current
+                && !ReferenceEquals(current, defaultSlot))
+            {
+                int found = options.IndexOf(current);
+                if (found > 0) initialIndex = found;
+            }
+            combo.SelectedIndex = initialIndex;
+
+            combo.SelectionChanged += (_, _) =>
+            {
+                if (_suppressPropertyEvents) return;
+                if (combo.SelectedItem is not SlotAsset chosen) return;
+                assignment.AssignedSlot = ReferenceEquals(chosen, defaultMarker)
+                    ? defaultSlot
+                    : chosen;
+            };
+
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                Margin = new Thickness(0, 1)
+            };
+            Grid.SetColumn(icon, 0);      grid.Children.Add(icon);
+            Grid.SetColumn(nameBlock, 1); grid.Children.Add(nameBlock);
+            Grid.SetColumn(combo, 2);     grid.Children.Add(combo);
+            return grid;
+        }
+
+        /// <summary>Reads the slot icon from the .rda archive (cached on the asset).
+        /// Returns null when there's no icon path or the archive isn't loaded.</summary>
+        private static Control? TryLoadSlotIcon(SlotAsset s)
+        {
+            try
+            {
+                if (s.Icon is null && !string.IsNullOrEmpty(s.IconFilename)
+                    && DataManager.Instance.IsInitialized)
+                {
+                    s.Icon = DataManager.Instance.DataArchive.TryLoadIcon(
+                        s.IconFilename, new global::Avalonia.PixelSize(32, 32));
+                }
+                if (s.Icon is null) return null;
+                return new Image
+                {
+                    Source = s.Icon,
+                    Width = 18, Height = 18,
+                    Stretch = global::Avalonia.Media.Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+            }
+            catch { return null; }
         }
 
         private static TextBlock SectionHeader(string text) => new()
@@ -855,17 +1313,491 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         {
             if (_currentMap != null) _mapRenderer?.SetMap(_currentMap);
             RebuildElementsTree();
+            RefreshIssuesPanel();
+        }
+
+        /// <summary>
+        /// Re-run validation and rebuild the issue list. Called after every edit
+        /// and on every map load.
+        /// </summary>
+        private void RefreshIssuesPanel()
+        {
+            if (_issuesPanel is null) return;
+            _issuesPanel.Children.Clear();
+
+            var issues = MapTemplateValidator.Validate(_currentMap);
+
+            if (issues.Count == 0)
+            {
+                _issuesPanel.Children.Add(new TextBlock
+                {
+                    Text = Localizer.Current["main.issues_ok"],
+                    Foreground = new SolidColorBrush(Color.Parse("#6FE07F")),
+                    FontSize = 12
+                });
+                return;
+            }
+
+            _issuesPanel.Children.Add(new TextBlock
+            {
+                Text = Localizer.Current.Format("main.issues_count", issues.Count),
+                Foreground = new SolidColorBrush(Color.Parse("#F5C842")),
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold
+            });
+            foreach (var issue in issues)
+            {
+                // If the issue has at least one target element, render the line as a
+                // clickable button that selects the element on the canvas. Otherwise
+                // (PA inverted, etc.) keep it as plain text.
+                if (issue.Targets.Count > 0)
+                {
+                    int cursor = 0; // cycles through targets on repeated clicks
+                    var btn = new Button
+                    {
+                        Content = "  • " + issue.Message,
+                        Background = Brushes.Transparent,
+                        BorderThickness = new Thickness(0),
+                        Padding = new Thickness(0, 1),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        HorizontalContentAlignment = HorizontalAlignment.Left,
+                        FontSize = 11,
+                        Cursor = new global::Avalonia.Input.Cursor(global::Avalonia.Input.StandardCursorType.Hand)
+                    };
+                    ToolTip.SetTip(btn, issue.Targets.Count > 1
+                        ? $"Click to cycle through the {issue.Targets.Count} elements"
+                        : "Click to focus this element");
+                    btn.Click += (_, _) =>
+                    {
+                        var target = issue.Targets[cursor % issue.Targets.Count];
+                        cursor++;
+                        _mapRenderer?.SelectElement(target);
+                    };
+                    _issuesPanel.Children.Add(btn);
+                }
+                else
+                {
+                    _issuesPanel.Children.Add(new TextBlock
+                    {
+                        Text = "  • " + issue.Message,
+                        Opacity = 0.8,
+                        FontSize = 11,
+                        TextWrapping = TextWrapping.Wrap
+                    });
+                }
+            }
         }
 
         private void OnTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (_suppressTreeEvents) return;
-            if (_elementsTree?.SelectedItem is MapElementNode node && node.Element is not null)
+            if (_elementsTree?.SelectedItem is not MapElementNode node) return;
+
+            if (node.Element is not null)
             {
                 // Forward to the existing single-selection pipeline so the canvas highlights it
                 // and the property panel is rebuilt — same code path as a click on the canvas.
                 _mapRenderer?.SelectElement(node.Element);
+                return;
             }
+
+            if (node.Kind == NodeKind.Zone && node.ZoneId == "PlayableArea")
+            {
+                // Bring the Session Properties panel into view + tick the edit toggle so the
+                // resize handles appear immediately on the canvas.
+                _sessionPropsPanel?.BringIntoView();
+                if (_sessionEditPaToggle != null) _sessionEditPaToggle.IsChecked = true;
+            }
+        }
+
+        // ------------------- Playable area editor -------------------
+
+        /// <summary>
+        /// Refresh the Session Properties side panel: region, map size, playable-area size
+        /// (slider for symmetric resize) and the per-edge advanced fields.
+        /// </summary>
+        private void PopulatePlayableAreaSection()
+        {
+            if (_sessionPropsPanel is null) return;
+            if (_paX1Box is null || _paY1Box is null || _paX2Box is null || _paY2Box is null) return;
+
+            if (_currentMap is null)
+            {
+                _sessionPropsPanel.IsVisible = false;
+                _originalPlayableArea = null;
+                return;
+            }
+
+            var pa = _currentMap.PlayableArea;
+            int x1 = pa.X;
+            int y1 = pa.Y;
+            int x2 = pa.X + pa.Width;
+            int y2 = pa.Y + pa.Height;
+
+            _originalPlayableArea = (x1, y1, x2, y2);
+
+            int mapSize = _currentMap.Size.X;
+            foreach (var box in new[] { _paX1Box, _paY1Box, _paX2Box, _paY2Box })
+            {
+                box.Minimum = 0;
+                box.Maximum = mapSize;
+            }
+            _paX1Box.Value = x1;
+            _paY1Box.Value = y1;
+            _paX2Box.Value = x2;
+            _paY2Box.Value = y2;
+
+            // Region: display the asset's region id when present (Roman, Celtic, …).
+            if (_sessionRegionLabel != null)
+                _sessionRegionLabel.Text = _currentMapItem?.Asset?.TemplateRegionId
+                                           ?? _currentMap.Session.Region?.Name
+                                           ?? "—";
+
+            if (_sessionMapSizeLabel != null)
+                _sessionMapSizeLabel.Text = $"{_currentMap.Size.X} × {_currentMap.Size.Y}";
+
+            // Symmetric playable-area slider — its value is the side length of the centered PA
+            // square. When the original margins aren't symmetric, take the average and lock the
+            // slider to that value; the user can still tweak each edge in the Advanced expander.
+            if (_sessionPaSlider != null && _sessionPaSizeLabel != null)
+            {
+                _suppressSessionPaSlider = true;
+                try
+                {
+                    int paSide = (pa.Width + pa.Height) / 2;
+                    _sessionPaSlider.Minimum = 64;
+                    _sessionPaSlider.Maximum = mapSize;
+                    _sessionPaSlider.Value = paSide;
+                    _sessionPaSizeLabel.Text = paSide.ToString();
+                }
+                finally { _suppressSessionPaSlider = false; }
+            }
+
+            _sessionPropsPanel.IsVisible = true;
+        }
+
+        private void OnSessionPaSliderChanged(object? sender,
+            global::Avalonia.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        {
+            if (_suppressSessionPaSlider || _currentMap is null) return;
+            if (_sessionPaSizeLabel is null || _sessionPaSlider is null) return;
+
+            // 1-tile granularity (no snap). The wheel handler still uses ±1 / ±8 with shift,
+            // and the user can fine-tune precisely with the keyboard arrows on the slider.
+            int side = (int)Math.Round(e.NewValue);
+            _sessionPaSizeLabel.Text = side.ToString();
+
+            // Center the playable-area square on the map for a symmetric resize.
+            int mapSize = _currentMap.Size.X;
+            int margin = (mapSize - side) / 2;
+            if (margin < 0) margin = 0;
+            int x1 = margin, y1 = margin;
+            int x2 = mapSize - margin, y2 = mapSize - margin;
+
+            var pa = _currentMap.PlayableArea;
+            var oldArea = (pa.X, pa.Y, pa.X + pa.Width, pa.Y + pa.Height);
+            var newArea = (x1, y1, x2, y2);
+            if (oldArea == newArea) return;
+
+            _currentMap.ResizeAndCommitMapTemplate(mapSize, newArea);
+            // Slider drags should still be undoable, but to avoid spamming the history
+            // for every micro-tick we only push when the user releases the thumb. For now
+            // each tick is a separate entry — good enough.
+            UndoRedoStack.Instance.Do(new PlayableAreaStackEntry(_currentMap, oldArea, newArea));
+            RefreshAfterEdit();
+            RefreshUndoRedoButtons();
+            if (_paX1Box != null) _paX1Box.Value = x1;
+            if (_paY1Box != null) _paY1Box.Value = y1;
+            if (_paX2Box != null) _paX2Box.Value = x2;
+            if (_paY2Box != null) _paY2Box.Value = y2;
+            if (_statPlayable != null)
+                _statPlayable.Text = $"{_currentMap.PlayableArea.Width}×{_currentMap.PlayableArea.Height}";
+        }
+
+        private void OnSessionEditPaToggleChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_mapRenderer == null || _sessionEditPaToggle == null) return;
+            _mapRenderer.EditPlayableArea = _sessionEditPaToggle.IsChecked == true;
+        }
+
+        // Mouse wheel over the playable-area slider nudges the value 1 tile at a time.
+        // Holding Shift gives ±8 (one snap step) for faster sweeps.
+        private void OnSessionPaSliderWheel(object? sender, PointerWheelEventArgs e)
+        {
+            if (_sessionPaSlider is null) return;
+            int step = (e.KeyModifiers & KeyModifiers.Shift) != 0 ? 8 : 1;
+            int direction = e.Delta.Y > 0 ? +1 : -1;
+            double next = _sessionPaSlider.Value + step * direction;
+            next = Math.Clamp(next, _sessionPaSlider.Minimum, _sessionPaSlider.Maximum);
+            _sessionPaSlider.Value = next;
+            e.Handled = true;
+        }
+
+        private void OnApplyPlayableArea(object? sender, RoutedEventArgs e)
+        {
+            if (_currentMap is null
+                || _paX1Box?.Value is not { } x1d || _paY1Box?.Value is not { } y1d
+                || _paX2Box?.Value is not { } x2d || _paY2Box?.Value is not { } y2d)
+                return;
+
+            int x1 = (int)x1d, y1 = (int)y1d, x2 = (int)x2d, y2 = (int)y2d;
+
+            // Sanity: x2 must be greater than x1 (and same for y) — otherwise the area is
+            // inverted and Anno will probably refuse the map.
+            if (x2 <= x1 || y2 <= y1)
+            {
+                if (_statusBar != null)
+                    _statusBar.Text = "⚠ Playable area invalid: x2 must be > x1 and y2 > y1.";
+                return;
+            }
+
+            var pa = _currentMap.PlayableArea;
+            var oldArea = (pa.X, pa.Y, pa.X + pa.Width, pa.Y + pa.Height);
+            var newArea = (x1, y1, x2, y2);
+            if (oldArea == newArea) return;
+
+            _currentMap.ResizeAndCommitMapTemplate(_currentMap.Size.X, newArea);
+            UndoRedoStack.Instance.Do(new PlayableAreaStackEntry(_currentMap, oldArea, newArea));
+            RefreshAfterEdit();
+            RefreshUndoRedoButtons();
+            if (_statSize != null) _statSize.Text = $"{_currentMap.Size.X}×{_currentMap.Size.Y}";
+            if (_statPlayable != null)
+                _statPlayable.Text = $"{_currentMap.PlayableArea.Width}×{_currentMap.PlayableArea.Height}";
+            if (_statusBar != null)
+                _statusBar.Text = $"Playable area: ({x1}, {y1}) → ({x2}, {y2})";
+        }
+
+        private void OnResetPlayableArea(object? sender, RoutedEventArgs e)
+        {
+            if (_originalPlayableArea is not { } orig
+                || _paX1Box is null || _paY1Box is null || _paX2Box is null || _paY2Box is null)
+                return;
+            _paX1Box.Value = orig.x1;
+            _paY1Box.Value = orig.y1;
+            _paX2Box.Value = orig.x2;
+            _paY2Box.Value = orig.y2;
+        }
+
+        // After an island finishes its drag, re-run validation + rebuild the categorized
+        // tree so a fresh duplicate-position issue (or a fixed one) shows up immediately.
+        private void OnElementMoveCommitted(object? sender, MapElement element)
+        {
+            RebuildElementsTree();
+            RefreshIssuesPanel();
+        }
+
+        // ------------------- Replace (convert Random ↔ Fixed) -------------------
+
+        private void BuildReplaceSection(StackPanel host, IslandElement island)
+        {
+            host.Children.Add(SectionHeader(Localizer.Current["main.replace_section"]));
+
+            // Single "Browse islands…" button for both Random and Fixed elements. The picker
+            // shows the union of compatible options with a 3-state filter (All/Random/Fixed)
+            // so the user can swap freely between kinds at the same position.
+            var browse = new Button
+            {
+                Content = Localizer.Current["main.replace_browse"],
+                Classes = { "accent" },
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            browse.Click += async (_, _) => await OpenIslandPicker(island);
+            host.Children.Add(browse);
+
+        }
+
+        /// <summary>
+        /// Open the visual island picker with both Random sizes and compatible Fixed assets,
+        /// then apply the user's choice as either a same-kind tweak (e.g. resize a Random)
+        /// or a kind conversion (Random↔Fixed). All paths preserve position + label and
+        /// push a single grouped undo entry.
+        /// </summary>
+        private async System.Threading.Tasks.Task OpenIslandPicker(IslandElement island)
+        {
+            if (_currentMap is null) return;
+
+            // Region filter: prefer the source MapTemplateAsset (vanilla maps) and fall
+            // back to the loaded session for mods.
+            string? regionId = _currentMapItem?.Asset?.TemplateRegionId
+                               ?? _currentMap.Session?.Region?.RegionID;
+
+            // Size window: compatible if the Fixed asset is roughly the same tile count
+            // as the source island. ±40 % is generous enough to cover small/medium overlap
+            // without proposing wildly bigger islands.
+            int expected = island is RandomIslandElement r
+                ? r.IslandSize.DefaultSizeInTiles
+                : island.SizeInTiles;
+            if (expected <= 0) expected = 192;
+            int min = (int)(expected * 0.6);
+            int max = (int)(expected * 1.4);
+
+            var choices = new List<IslandChoice>();
+
+            // Random "buckets" — Anno 117 vanilla observations:
+            //   - Small/Medium/Large are used for every random pool island.
+            //   - ExtraLarge (<Size>0300</Size>) is used EXCLUSIVELY for the 4 starter spots
+            //     of every map (always with Type.id = 0100 / Starter).
+            //   - Continental (<Size> never; emitted via <IslandSize><value><id>0600</id></value></IslandSize>)
+            //     is reserved for the unique continental_01 fixed asset of DLC1 expanded.
+            // We hide Continental unconditionally and ExtraLarge for non-starter elements so
+            // the user can't produce templates the engine misinterprets.
+            bool isStarterContext = island.IslandType == IslandType.Starter;
+            foreach (var size in IslandSize.All)
+            {
+                if (size == IslandSize.Continental) continue;
+                if (size == IslandSize.ExtraLarge && !isStarterContext) continue;
+                choices.Add(IslandChoice.ForRandom(size));
+            }
+
+            // Fixed assets, filtered by region + size.
+            try
+            {
+                foreach (var asset in DataManager.Instance.IslandRepository)
+                {
+                    if (asset is null) continue;
+                    if (asset.SizeInTiles < min || asset.SizeInTiles > max) continue;
+                    if (regionId is not null
+                        && !string.Equals(asset.Region?.RegionID, regionId,
+                            System.StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    choices.Add(IslandChoice.ForFixed(asset));
+                }
+            }
+            catch { /* repo not initialized — show only random buckets */ }
+
+            var dialog = new IslandPickerDialog(choices,
+                Localizer.Current["main.replace_pick_fixed"]);
+            var picked = await dialog.ShowDialog<IslandChoice?>(this);
+            if (picked is null) return;
+
+            ApplyPickerChoice(island, picked);
+        }
+
+        private void ApplyPickerChoice(IslandElement source, IslandChoice choice)
+        {
+            if (_currentMap is null) return;
+
+            // Random → Random of a different size: just mutate IslandSize. No element swap,
+            // no undo group needed — the existing IslandPropertiesStackEntry covers it.
+            if (source is RandomIslandElement r && choice.IsRandom && choice.RandomSize is { } rs)
+            {
+                if (r.IslandSize == rs) return;
+                var oldSize = r.IslandSize;
+                r.IslandSize = rs;
+                UndoRedoStack.Instance.Do(new IslandPropertiesStackEntry(
+                    r, oldIslandSize: oldSize, newIslandSize: rs));
+                RefreshAfterEdit();
+                RefreshUndoRedoButtons();
+                _mapRenderer?.SelectElement(r);
+                return;
+            }
+
+            // Random → Fixed
+            if (source is RandomIslandElement rr && choice.IsFixed && choice.FixedAsset is { } fa)
+            {
+                ConvertRandomToFixed(rr, fa);
+                return;
+            }
+
+            // Fixed → Random
+            if (source is FixedIslandElement f && choice.IsRandom)
+            {
+                ConvertFixedToRandom(f);
+                return;
+            }
+
+            // Fixed → Fixed (different asset): swap the underlying asset. We rebuild the
+            // element to keep the new SizeInTiles consistent with the chosen asset.
+            if (source is FixedIslandElement fSrc && choice.IsFixed && choice.FixedAsset is { } newAsset)
+            {
+                var replacement = new FixedIslandElement(newAsset, fSrc.IslandType ?? IslandType.Normal)
+                {
+                    Position = new Vector2(fSrc.Position),
+                    Label = fSrc.Label
+                };
+                ReplaceElement(fSrc, replacement);
+            }
+        }
+
+        private void ConvertFixedToRandom(FixedIslandElement source)
+        {
+            if (_currentMap is null) return;
+            // Map the asset's tile count back to an IslandSize enum value.
+            int sz = source.IslandAsset.SizeInTiles;
+            var size = IslandSize.All
+                .OrderBy(s => System.Math.Abs(s.DefaultSizeInTiles - sz))
+                .First();
+            var replacement = new RandomIslandElement(size, source.IslandType ?? IslandType.Normal)
+            {
+                Position = new Vector2(source.Position),
+                Label = source.Label
+            };
+            ReplaceElement(source, replacement);
+        }
+
+        private void ConvertRandomToFixed(RandomIslandElement source, IslandAsset asset)
+        {
+            if (_currentMap is null) return;
+            var replacement = new FixedIslandElement(asset, source.IslandType ?? IslandType.Normal)
+            {
+                Position = new Vector2(source.Position),
+                Label = source.Label
+            };
+            ReplaceElement(source, replacement);
+            if (_statusBar != null)
+                _statusBar.Text = "⚠ Random→Fixed : la position de la random n'était qu'approximative — "
+                                + "déplace l'île dans l'éditeur si elle apparaît sous l'eau en jeu.";
+        }
+
+        /// <summary>Swap one element for another in-place. Records a grouped undo entry
+        /// (remove + add) so a single Ctrl+Z reverts the conversion.</summary>
+        private void ReplaceElement(IslandElement oldElement, IslandElement newElement)
+        {
+            if (_currentMap is null) return;
+            _currentMap.Elements.Remove(oldElement);
+            _currentMap.Elements.Add(newElement);
+            UndoRedoStack.Instance.Do(new GroupStackEntry(new List<IUndoRedoStackEntry>
+            {
+                new IslandRemoveStackEntry(oldElement, _currentMap),
+                new IslandAddStackEntry(newElement, _currentMap)
+            }));
+            _selectedElementForPanel = newElement;
+            RefreshAfterEdit();
+            RefreshUndoRedoButtons();
+            // Re-select the new element so the Properties panel reflects it.
+            _mapRenderer?.SelectElement(newElement);
+            if (_statusBar != null)
+                _statusBar.Text = $"Remplacé : {oldElement.GetType().Name} → {newElement.GetType().Name}";
+        }
+
+        // Live drag from the canvas handles → just refresh the editor numbers.
+        private void OnPlayableAreaResizing(object? sender, (int x1, int y1, int x2, int y2) live)
+        {
+            if (_paX1Box is null || _paY1Box is null || _paX2Box is null || _paY2Box is null) return;
+            _paX1Box.Value = live.x1;
+            _paY1Box.Value = live.y1;
+            _paX2Box.Value = live.x2;
+            _paY2Box.Value = live.y2;
+        }
+
+        // Drag finished → commit through the model and push an undo entry. Same code path
+        // the Apply button uses, just with handles instead of typed numbers.
+        private void OnPlayableAreaResized(object? sender,
+            (int x1, int y1, int x2, int y2, int oldX1, int oldY1, int oldX2, int oldY2) e)
+        {
+            if (_currentMap is null) return;
+            var newArea = (e.x1, e.y1, e.x2, e.y2);
+            var oldArea = (e.oldX1, e.oldY1, e.oldX2, e.oldY2);
+            if (newArea == oldArea) return;
+
+            _currentMap.ResizeAndCommitMapTemplate(_currentMap.Size.X, newArea);
+            UndoRedoStack.Instance.Do(new PlayableAreaStackEntry(_currentMap, oldArea, newArea));
+            RefreshAfterEdit();
+            RefreshUndoRedoButtons();
+            if (_statPlayable != null)
+                _statPlayable.Text = $"{_currentMap.PlayableArea.Width}×{_currentMap.PlayableArea.Height}";
+            if (_statusBar != null)
+                _statusBar.Text = $"Playable area: ({e.x1}, {e.y1}) → ({e.x2}, {e.y2})";
         }
     }
 }

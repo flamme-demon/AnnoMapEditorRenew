@@ -21,6 +21,9 @@
                 <Button Content="−" Click="OnZoomOut" Padding="6,0" />
                 <Button Content="+" Click="OnZoomIn"  Padding="6,0" />
                 <Button Content="Reset" Click="OnZoomReset" Padding="6,0" />
+                <Button x:Name="OrientationBtn" Content="◇ Vue jeu"
+                        Click="OnRotateView" Padding="6,0"
+                        ToolTip.Tip="Bascule entre la vue à plat (0°) et la vue losange du jeu (45°, nord en haut)" />
             </StackPanel>
         </Border>
 

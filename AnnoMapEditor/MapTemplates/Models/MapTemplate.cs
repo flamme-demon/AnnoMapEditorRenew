@@ -1,4 +1,4 @@
-using Anno.FileDBModels.Anno1800.MapTemplate;
+using AnnoMapEditor.MapTemplates.Serializing.Models;
 using AnnoMapEditor.DataArchives.Assets.Models;
 using AnnoMapEditor.Utilities;
 using System;
@@ -30,6 +30,18 @@ namespace AnnoMapEditor.MapTemplates.Models
             private set => SetProperty(ref _playableArea, value, dependendProperties: new[] { nameof(MapSizeText) });
         }
         private Rect2 _playableArea = new();
+
+        /// <summary>
+        /// On Anno 117 DLC1 expanded templates this is the original 2048-tile playable area
+        /// (e.g. <c>20 20 2020 2020</c>) preserved alongside the actual <see cref="PlayableArea"/>
+        /// (e.g. <c>20 20 2440 2440</c>). Empty / zero-sized on regular non-expanded templates.
+        /// Surfaced so the renderer can draw a second cadre that shows where the original 2048
+        /// reference frame sits inside the expanded 2688 canvas.
+        /// </summary>
+        public Rect2 InitialPlayableArea =>
+            _templateDocument.MapTemplate?.InitialPlayableArea is { Length: 4 } init
+                ? new Rect2(init)
+                : new Rect2();
 
         public SessionAsset Session
         {
@@ -190,18 +202,70 @@ namespace AnnoMapEditor.MapTemplates.Models
             MapSizeConfigCommitted?.Invoke(this, new EventArgs());
         }
 
+        // Set during ToTemplateDocument so child elements (FixedIslandElement, ...) can decide
+        // whether to emit the DLC1-expanded fixed-island idiom (FertilitiesPerAreaIndex /
+        // MineSlotActivation / FertilitySetGUIDs / IslandSize / Locked / RandomIslandConfig
+        // wrapper). Vanilla DLC1 emits these on EVERY fixed island in expanded templates,
+        // not just continentals — without them the FertilitySet binding fails.
+        [ThreadStatic]
+        internal static bool IsExportingExpandedMap;
+
         public MapTemplateDocument? ToTemplateDocument(bool writeInitialArea = false)
         {
             if (_templateDocument.MapTemplate?.Size is null || _templateDocument.MapTemplate?.PlayableArea is null)
                 return null;
 
-            _templateDocument.MapTemplate.TemplateElement = new List<TemplateElement>(Elements.Select(x => x.ToTemplate()).Where(x => x is not null)!);
+            int sizeForCheck = _templateDocument.MapTemplate.Size?.Length > 0
+                ? _templateDocument.MapTemplate.Size[0] : 0;
+            bool isExpandedForElements = sizeForCheck > 2048
+                                         || _templateDocument.MapTemplate.IsEnlargedTemplate == true;
+
+            try
+            {
+                IsExportingExpandedMap = isExpandedForElements;
+                _templateDocument.MapTemplate.TemplateElement = new List<TemplateElement>(
+                    Elements.Select(x => x.ToTemplate()).Where(x => x is not null)!);
+            }
+            finally
+            {
+                IsExportingExpandedMap = false;
+            }
             _templateDocument.MapTemplate.ElementCount = _templateDocument.MapTemplate.TemplateElement.Count;
 
-            if (Session == Anno1800StaticAssets.NewWorldSession)
-                _templateDocument.MapTemplate.InitialPlayableArea = _templateDocument.MapTemplate.PlayableArea;
+            // Anno 117 DLC1 "expanded" templates are 2688×2688 and require a fixed 5-tag header
+            // (Size 2688, IsEnlargedTemplate=true, InitialPlayableArea=20,20,2020,2020,
+            //  EnlargementOffset=0,0,0,0, PlayableArea=20,20,2440,2440). Vanilla DLC1 emits all
+            // 6 templates with these *exact* values — they are NOT customizable. Without them
+            // the engine silently falls back to a 2048-tile generator and any island placed
+            // beyond 2048 (continentals at the corners, etc.) lands underwater.
+            //
+            // EnlargementOffset is missing from Anno.FileDBModels.dll's MapTemplate type, so we
+            // patch it into the BBDocument post-serialization (see FileDBSerializer.WriteAsync).
+            int currentSize = _templateDocument.MapTemplate.Size?.Length > 0
+                ? _templateDocument.MapTemplate.Size[0] : 0;
+            bool isExpanded = currentSize > 2048
+                              || _templateDocument.MapTemplate.IsEnlargedTemplate == true;
+
+            if (isExpanded)
+            {
+                _templateDocument.MapTemplate.IsEnlargedTemplate = true;
+                _templateDocument.MapTemplate.InitialPlayableArea = new[] { 20, 20, 2020, 2020 };
+                if (_templateDocument.MapTemplate.EnlargementOffset is null)
+                    _templateDocument.MapTemplate.EnlargementOffset = new[] { 0, 0 };
+            }
+            else if (Session == Anno1800StaticAssets.NewWorldSession)
+            {
+                _templateDocument.MapTemplate.InitialPlayableArea =
+                    _templateDocument.MapTemplate.PlayableArea;
+                _templateDocument.MapTemplate.IsEnlargedTemplate = null;
+                _templateDocument.MapTemplate.EnlargementOffset = null;
+            }
             else
+            {
                 _templateDocument.MapTemplate.InitialPlayableArea = null;
+                _templateDocument.MapTemplate.IsEnlargedTemplate = null;
+                _templateDocument.MapTemplate.EnlargementOffset = null;
+            }
 
             return _templateDocument;
         }
