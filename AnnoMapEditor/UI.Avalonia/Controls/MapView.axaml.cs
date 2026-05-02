@@ -57,6 +57,11 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
         {
             InitializeComponent();
             Cursor = new Cursor(StandardCursorType.Hand);
+            // Focusable so we can steal the focus away from the maps ListBox /
+            // element TreeView after a selection — that way arrow keys land here
+            // (no default behavior on the UserControl) and bubble up to the window
+            // nudge handler instead of changing the list selection.
+            Focusable = true;
         }
 
         private void InitializeComponent()
@@ -131,6 +136,9 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
         private readonly List<Border> _islandLabels = new();
         // Reverse lookup so we can move a badge along when the user drags its island.
         private readonly Dictionary<MapElement, Border> _labelByElement = new();
+        // NPC type badge (T/P/D/V/S) — tracked separately because it sits outside the
+        // island visual (un-rotated) and needs to follow the island on drag/nudge.
+        private readonly Dictionary<MapElement, Border> _npcBadgeByElement = new();
         /// <summary>When false (default), the 8 yellow resize handles are hidden so the canvas
         /// stays uncluttered. Toggled by the "Edit playable area" switch in the side panel.</summary>
         public bool EditPlayableArea
@@ -156,8 +164,25 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
         /// <summary>
         /// Selects the given element from outside (e.g. tree-view click). Walks the canvas
         /// children to find the matching visual (each visual has Tag = its MapElement).
+        /// Also pulses a yellow ring around it so the user can see WHERE the selection
+        /// landed — the static border highlight alone is hard to spot at low zoom.
         /// </summary>
         public void SelectElement(MapElement? element)
+        {
+            SelectElementInternal(element, withFlashAndScroll: true);
+        }
+
+        /// <summary>
+        /// Same as <see cref="SelectElement"/> but without the flash + auto-scroll. Used
+        /// after an in-place rebuild (e.g. post-drag re-render) where the user is already
+        /// looking at the element and a sudden pan to (0,0) would be jarring.
+        /// </summary>
+        internal void ReSelectQuiet(MapElement? element)
+        {
+            SelectElementInternal(element, withFlashAndScroll: false);
+        }
+
+        private void SelectElementInternal(MapElement? element, bool withFlashAndScroll)
         {
             if (_canvas is null) { Select(element, null); return; }
             Control? visual = null;
@@ -169,6 +194,104 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                 }
             }
             Select(element, visual);
+            if (element is not null && visual is not null)
+            {
+                if (withFlashAndScroll)
+                {
+                    ScrollVisualIntoView(visual);
+                    FlashElement(visual);
+                }
+                // Steal the focus to the MapView (a UserControl with no default
+                // arrow-key behavior) so subsequent Up/Down/Left/Right go through
+                // the bubble route uninterrupted by the maps ListBox / element
+                // TreeView, and reach the MainWindow nudge handler. Without this
+                // the keys would still hit whichever list the user clicked last.
+                Focus();
+            }
+        }
+
+        /// <summary>
+        /// If the given visual is partially or fully outside the viewport, pan the
+        /// scroller so it becomes centered. No-op when it's already comfortably visible
+        /// (a 50 px margin on each side keeps small jitters from re-centering all the
+        /// time). Uses TransformToVisual so the math handles zoom AND the optional
+        /// -45° "Vue jeu" rotation correctly without us re-implementing the matrices.
+        /// </summary>
+        private void ScrollVisualIntoView(Control visual)
+        {
+            if (_scroller is null || _canvas is null) return;
+            var matrix = visual.TransformToVisual(_scroller);
+            if (matrix is not Matrix m) return;
+            double w = visual.Bounds.Width  > 0 ? visual.Bounds.Width
+                       : (visual is Layoutable l1 ? l1.Width  : 24);
+            double h = visual.Bounds.Height > 0 ? visual.Bounds.Height
+                       : (visual is Layoutable l2 ? l2.Height : 24);
+            Point center = m.Transform(new Point(w / 2, h / 2));
+            double margin = 50;
+            double viewW = _scroller.Bounds.Width;
+            double viewH = _scroller.Bounds.Height;
+            bool visibleX = center.X >= margin && center.X <= viewW - margin;
+            bool visibleY = center.Y >= margin && center.Y <= viewH - margin;
+            if (visibleX && visibleY) return;
+            double absX = _scroller.Offset.X + center.X;
+            double absY = _scroller.Offset.Y + center.Y;
+            double targetX = absX - viewW / 2;
+            double targetY = absY - viewH / 2;
+            _scroller.Offset = new Vector(Math.Max(0, targetX), Math.Max(0, targetY));
+        }
+
+        /// <summary>
+        /// Spawn a yellow pulsing ring around the visual that fades out over ~700ms.
+        /// Used after external selections (tree / issues panel) so the user can locate
+        /// the picked element on the canvas at a glance even if its border highlight
+        /// is small at the current zoom.
+        /// </summary>
+        private void FlashElement(Control visual)
+        {
+            if (_canvas is null) return;
+            double left = Canvas.GetLeft(visual);
+            double top  = Canvas.GetTop(visual);
+            double w = visual.Bounds.Width  > 0 ? visual.Bounds.Width
+                       : (visual is Layoutable l1 ? l1.Width  : 24);
+            double h = visual.Bounds.Height > 0 ? visual.Bounds.Height
+                       : (visual is Layoutable l2 ? l2.Height : 24);
+            // Make the ring a touch larger than the bbox so it visually surrounds the
+            // element instead of overlapping its borders.
+            double margin = Math.Max(8, Math.Max(w, h) * 0.15);
+            var ring = new Ellipse
+            {
+                Width  = w + margin * 2,
+                Height = h + margin * 2,
+                Stroke = new SolidColorBrush(Color.Parse("#FFEB3B")),
+                StrokeThickness = 5,
+                Fill = Brushes.Transparent,
+                IsHitTestVisible = false,
+                ZIndex = 500
+            };
+            Canvas.SetLeft(ring, left - margin);
+            Canvas.SetTop(ring, top - margin);
+            _canvas.Children.Add(ring);
+
+            // Manual fade-out animation via DispatcherTimer. Avalonia's animation API
+            // works too but a 30-tick timer keeps the dependency surface tiny and
+            // matches the 60 fps feel of the rest of the canvas.
+            const int totalFrames = 30;
+            int frame = 0;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(22) };
+            timer.Tick += (_, _) =>
+            {
+                frame++;
+                double t = (double)frame / totalFrames;
+                // Two-pulse curve so the user clearly sees a flash, not a slow fade.
+                double pulse = 1.0 - t;
+                ring.Opacity = Math.Clamp(0.5 + 0.5 * Math.Cos(t * Math.PI * 2), 0, 1) * pulse;
+                if (frame >= totalFrames)
+                {
+                    timer.Stop();
+                    _canvas?.Children.Remove(ring);
+                }
+            };
+            timer.Start();
         }
 
         public void RefreshElementPositions()
@@ -181,6 +304,18 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                 int size = el is IslandElement isl && isl.SizeInTiles > 0 ? isl.SizeInTiles : 24;
                 Canvas.SetLeft(child, el.Position.X);
                 Canvas.SetTop(child, h - el.Position.Y - size);
+
+                // Drag the island's name/size label and NPC type badge (T/P/D/V/S)
+                // along with it. They live as separate children of the canvas so
+                // they stay un-rotated and readable, but that means they don't
+                // inherit the island visual's transform — we have to reposition
+                // them explicitly.
+                PositionLabelFor(el);
+                if (_npcBadgeByElement.TryGetValue(el, out var npc))
+                {
+                    Canvas.SetLeft(npc, el.Position.X + size - 18);
+                    Canvas.SetTop(npc, h - el.Position.Y - size + 2);
+                }
             }
         }
 
@@ -207,6 +342,7 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
             _canvas.Children.Clear();
             _islandLabels.Clear();
             _labelByElement.Clear();
+            _npcBadgeByElement.Clear();
 
             if (_map is null || _map.Size.X <= 0)
             {
@@ -382,25 +518,107 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                         ? Math.Min(_map.Size.X, _map.Size.Y)
                         : 1024;
                     int size = Math.Clamp(rawSize, 24, maxVisualSize);
+
+                    // Fixed islands: the .a7m ActiveMapRect tells us where the inhabitable
+                    // terrain sits inside the SizeInTiles square — the rest is ocean
+                    // buffer the engine draws out-of-bounds. Render the thumbnail at that
+                    // real size, offset within the reserved bbox, so the canvas matches
+                    // what the user sees on the in-game minimap. Position semantics stay
+                    // the same (top-left = reserved-terrain corner) so drag, snap and
+                    // serialization are untouched.
+                    // Random islands keep the full SizeInTiles bbox: they don't have an
+                    // asset-bound active rect (the asset is picked at runtime).
+                    int activeW = size, activeH = size;
+                    int activeOffsetX = 0, activeOffsetY = 0;
+                    if (island is FixedIslandElement fxScale
+                        && fxScale.IslandAsset?.ActiveMapRect is { Length: 4 } amr
+                        && rawSize > 0)
+                    {
+                        int x1 = amr[0], y1 = amr[1], x2 = amr[2], y2 = amr[3];
+                        activeW = Math.Clamp(x2 - x1, 16, maxVisualSize);
+                        activeH = Math.Clamp(y2 - y1, 16, maxVisualSize);
+                        activeOffsetX = Math.Max(0, x1);
+                        // Anno coords are Y-up while the canvas is Y-down: the top of the
+                        // active rect in canvas space is at (rawSize - y2) from the top
+                        // of the reserved bbox.
+                        activeOffsetY = Math.Max(0, rawSize - y2);
+                    }
                     IBrush fill = ResolveIslandBrush(island);
                     string? badge = ResolveIslandBadge(island);
 
+                    // Random Large that pokes outside the green InitialPlayableArea on DLC1
+                    // expanded maps: the engine refuses to spawn it. Confirmed only for
+                    // random Large in-game — Medium/Small are fine; fixed and Continental
+                    // haven't been tested so they keep the normal rendering.
+                    bool isUngeneratable = false;
+                    if (island is RandomIslandElement rUg
+                        && rUg.IslandSize == IslandSize.Large
+                        && rUg.HasExplicitSize
+                        && _map is not null)
+                    {
+                        Rect2 initPa = _map.InitialPlayableArea;
+                        if (initPa.Width > 0 && initPa.Height > 0)
+                        {
+                            int x = island.Position.X;
+                            int y = island.Position.Y;
+                            bool inside = x >= initPa.X && y >= initPa.Y
+                                && (x + size) <= initPa.X + initPa.Width
+                                && (y + size) <= initPa.Y + initPa.Height;
+                            isUngeneratable = !inside;
+                        }
+                    }
+
                     Bitmap? thumbnail = TryGetThumbnail(island);
                     Control visual;
+
+                    // Helper: wrap an inner control sized at (activeW × activeH) into the
+                    // reserved-terrain bbox (size × size). Keeps drag/hit-test on the full
+                    // bbox while painting the visual content only on the active rect.
+                    Grid WrapReserved(Control inner)
+                    {
+                        var outer = new Grid
+                        {
+                            Width = size,
+                            Height = size,
+                            Background = Brushes.Transparent
+                        };
+                        if (inner is Layoutable l)
+                        {
+                            l.HorizontalAlignment = HorizontalAlignment.Left;
+                            l.VerticalAlignment   = VerticalAlignment.Top;
+                            l.Width  = activeW;
+                            l.Height = activeH;
+                            l.Margin = new Thickness(activeOffsetX, activeOffsetY, 0, 0);
+                        }
+                        outer.Children.Add(inner);
+                        return outer;
+                    }
+                    void AddOverlayLayer(Grid host, Control overlay)
+                    {
+                        if (overlay is Layoutable l)
+                        {
+                            l.HorizontalAlignment = HorizontalAlignment.Left;
+                            l.VerticalAlignment   = VerticalAlignment.Top;
+                            l.Width  = activeW;
+                            l.Height = activeH;
+                            l.Margin = new Thickness(activeOffsetX, activeOffsetY, 0, 0);
+                        }
+                        host.Children.Add(overlay);
+                    }
 
                     if (thumbnail is not null)
                     {
                         var img = new Image
                         {
-                            Width = size,
-                            Height = size,
+                            Width = activeW,
+                            Height = activeH,
                             Source = thumbnail,
                             Stretch = Stretch.Uniform
                         };
                         var border = new Border
                         {
-                            Width = size,
-                            Height = size,
+                            Width = activeW,
+                            Height = activeH,
                             Background = Brushes.Transparent,
                             BorderBrush = fill,
                             BorderThickness = new Thickness(1.5),
@@ -416,23 +634,32 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                         if (island is FixedIslandElement fixedI && fixedI.Rotation is byte r)
                             border.RenderTransform = new RotateTransform(-r * 90);
 
-                        // Two kinds of overlay we want to show on top of the thumbnail:
-                        //   - "Frontière" (random Large/ExtraLarge/Continental) → yellow dashed cadre
-                        //   - "Zone" (random without a <Size> tag = generic placement spot) →
-                        //     cyan dashed cadre (high contrast over the dark blue map background)
+                        // Three overlay flavours stacked on top of the thumbnail:
+                        //   - Random Large hors green frame → translucent red veil over the
+                        //     whole tile (same style as the green InitialPlayableArea veil)
+                        //   - "Frontière" (random Large/ExtraLarge/Continental) → yellow dashed
+                        //   - "Zone" (random without <Size>) → cyan dashed
+                        // Red veil takes priority and replaces both other overlays since
+                        // "won't generate" is the dominant signal for the user.
                         bool isFrontier = island is RandomIslandElement && rawSize > 320;
                         bool isZonePlaceholder = island is RandomIslandElement r2 && !r2.HasExplicitSize;
-                        // Debug aid: surface the zone count once so we can tell whether the
-                        // detection itself is firing. (Goes to the app log, not the UI.)
                         if (isZonePlaceholder)
                             System.Diagnostics.Debug.WriteLine(
                                 $"[MapView] zone placeholder @ {island.Position.X},{island.Position.Y} size={rawSize}");
-                        if (isFrontier || isZonePlaceholder)
+
+                        var stack = WrapReserved(border);
+                        if (isUngeneratable)
                         {
-                            var overlay = new Rectangle
+                            AddOverlayLayer(stack, new Rectangle
                             {
-                                Width  = size,
-                                Height = size,
+                                Fill = new SolidColorBrush(Color.FromArgb(96, 0xFF, 0x17, 0x44)),
+                                IsHitTestVisible = false
+                            });
+                        }
+                        else if (isFrontier || isZonePlaceholder)
+                        {
+                            AddOverlayLayer(stack, new Rectangle
+                            {
                                 Fill   = Brushes.Transparent,
                                 Stroke = new SolidColorBrush(isFrontier
                                     ? Color.Parse("#FFD740")    // yellow — frontière
@@ -442,26 +669,19 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                                 RadiusX = 3,
                                 RadiusY = 3,
                                 IsHitTestVisible = false
-                            };
-                            var stack = new Grid { Width = size, Height = size };
-                            stack.Children.Add(border);
-                            stack.Children.Add(overlay);
-                            visual = stack;
+                            });
                         }
-                        else
-                        {
-                            visual = border;
-                        }
+                        visual = stack;
                     }
                     else
                     {
                         // No thumbnail: outline only, with diagonal hatch hint for placeholders.
                         // Continental/runtime placeholders are typically large; keep them subtle.
                         bool isLargePlaceholder = rawSize > 256;
-                        visual = new Rectangle
+                        var rect = new Rectangle
                         {
-                            Width = size,
-                            Height = size,
+                            Width = activeW,
+                            Height = activeH,
                             Fill = Brushes.Transparent,
                             Stroke = fill,
                             StrokeThickness = isLargePlaceholder ? 1.5 : 1.5,
@@ -472,12 +692,31 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                             RadiusY = 3,
                             Opacity = isLargePlaceholder ? 0.55 : 0.85
                         };
+                        var stack = WrapReserved(rect);
+                        if (isUngeneratable)
+                        {
+                            AddOverlayLayer(stack, new Rectangle
+                            {
+                                Fill = new SolidColorBrush(Color.FromArgb(96, 0xFF, 0x17, 0x44)),
+                                IsHitTestVisible = false
+                            });
+                        }
+                        visual = stack;
                     }
 
                     Canvas.SetLeft(visual, island.Position.X);
                     Canvas.SetTop(visual, mapHeight - island.Position.Y - size);
-                    if (!string.IsNullOrEmpty(island.Label))
+                    if (isUngeneratable)
+                    {
+                        string explain = Localizer.Current["main.tooltip.random_large_outside_init"];
+                        ToolTip.SetTip(visual,
+                            explain
+                            + (string.IsNullOrEmpty(island.Label) ? "" : "\n\n" + island.Label));
+                    }
+                    else if (!string.IsNullOrEmpty(island.Label))
+                    {
                         ToolTip.SetTip(visual, island.Label);
+                    }
                     visual.Tag = island;
 
                     // Type/size badge centered on the island — pill-shape with a translucent
@@ -554,6 +793,7 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                         Canvas.SetTop(badgeText, mapHeight - island.Position.Y - size + 2);
                         // We add the badge to the canvas separately so it isn't rotated with the island.
                         if (_canvas != null) _canvas.Children.Add(badgeText);
+                        _npcBadgeByElement[island] = badgeText;
                     }
 
                     return visual;
@@ -883,6 +1123,7 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
             if (_potentialClick && _pressedElement != null)
             {
                 Select(_pressedElement, _pressedVisual);
+                Focus();
             }
             else if (_pressedElement is null && !_isPanning && !_isDraggingElement
                      && e.InitialPressMouseButton == MouseButton.Left)
@@ -899,6 +1140,14 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                     UndoRedoStack.Instance.Do(
                         new MapElementTransformStackEntry(_pressedElement, _dragOriginalPosition, finalPos));
                     ElementMoveCommitted?.Invoke(this, _pressedElement);
+                    // Recompute visuals: a dragged Random Large that crosses the green
+                    // InitialPlayableArea boundary needs to gain or lose its red veil
+                    // (and tooltip) to match the new position. The cheapest reliable
+                    // way is a full Render(); preserve the current selection so the
+                    // user doesn't lose context after the drag.
+                    var keep = _pressedElement;
+                    Render();
+                    ReSelectQuiet(keep);
                 }
                 ElementSelected?.Invoke(this, _pressedElement);
             }

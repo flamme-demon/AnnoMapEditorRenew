@@ -161,6 +161,11 @@ namespace AnnoMapEditor.DataArchives.Assets.Repositories
             {
                 FilePath = mapFilePath,
                 SizeInTiles = sizeInTiles,
+                // The .a7m file ships an explicit "active map rect" = the bbox of the
+                // inhabitable terrain inside the SizeInTiles square. Pull it through so
+                // the editor can render the island at its real visual size (matching the
+                // in-game minimap) instead of the larger reserved-terrain square.
+                ActiveMapRect = islandTemplate?.ActiveMapRect,
                 Thumbnail = thumbnail,
                 Slots = mineSlots
             };

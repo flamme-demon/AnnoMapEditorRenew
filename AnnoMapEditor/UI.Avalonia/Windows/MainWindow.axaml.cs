@@ -12,6 +12,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AnnoMapEditor.DataArchives;
 using AnnoMapEditor.DataArchives.Assets.Models;
 using AnnoMapEditor.MapTemplates;
@@ -43,6 +44,11 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         private ItemsControl? _dlcFilters;
         private TextBlock? _selHint;
         private StackPanel? _selProperties;
+        // Live-updating position readout in the right-hand properties panel.
+        // Populated by BuildPropertyControls, refreshed by OnMapElementMovedLive
+        // so the user can read X/Y change frame by frame while dragging.
+        private TextBlock? _positionValueText;
+        private MapElement? _positionTrackedElement;
         private bool _suppressPropertyEvents;
         private ListBox? _historyList;
         private Button? _undoButton;
@@ -109,6 +115,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (_mapRenderer != null)
             {
                 _mapRenderer.ElementSelected += OnMapElementSelected;
+                _mapRenderer.ElementMoved += OnMapElementMovedLive;
                 _mapRenderer.ElementMoveCommitted += OnElementMoveCommitted;
                 _mapRenderer.PlayableAreaResizing += OnPlayableAreaResizing;
                 _mapRenderer.PlayableAreaResized += OnPlayableAreaResized;
@@ -118,6 +125,16 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             UndoRedoStack.Instance.PropertyChanged += (_, __) => RefreshUndoRedoButtons();
             RefreshUndoRedoButtons();
             KeyDown += OnWindowKeyDown;
+            // Arrow keys: capture in tunnel routing so the map list / element tree
+            // (which natively consume Up/Down/Left/Right for ListBox navigation)
+            // can't swallow them before we get a chance to nudge the selected
+            // island. We still bail out when a text input has focus so typing in
+            // a NumericUpDown / TextBox keeps working.
+            // KeyDown in Avalonia bubbles, doesn't tunnel. The map list / element tree
+            // mark the event Handled when they consume an arrow key for their own
+            // navigation, so a plain bubble handler never sees it. Subscribe with
+            // handledEventsToo:true to bypass that and run our nudge regardless.
+            this.AddHandler(KeyDownEvent, OnTunnelArrowKeys, RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
         private void OnOpened(object? sender, EventArgs e)
@@ -433,8 +450,32 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             {
                 host.Children.Add(SectionHeader("Édition"));
 
-                // Position (read-only display, modifiable via drag)
-                host.Children.Add(ReadOnlyRow("Position", $"({element.Position.X}, {element.Position.Y})"));
+                // Position (read-only display, modifiable via drag).
+                // We hold on to the value TextBlock so OnMapElementMovedLive can rewrite
+                // it frame by frame while the user drags the element on the canvas.
+                var posLbl = new TextBlock
+                {
+                    Text = "Position",
+                    Opacity = 0.7,
+                    FontSize = 12,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                _positionValueText = new TextBlock
+                {
+                    Text = $"({element.Position.X}, {element.Position.Y})",
+                    FontSize = 12,
+                    FontFamily = new FontFamily("Cascadia Code,Consolas,monospace"),
+                    TextWrapping = TextWrapping.Wrap
+                };
+                _positionTrackedElement = element;
+                var posGrid = new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("110,*"),
+                    Margin = new Thickness(0, 2)
+                };
+                Grid.SetColumn(posLbl, 0); posGrid.Children.Add(posLbl);
+                Grid.SetColumn(_positionValueText, 1); posGrid.Children.Add(_positionValueText);
+                host.Children.Add(posGrid);
 
                 // IslandType — editable for IslandElement, IslandSize — editable for RandomIslandElement.
                 // The two combos are wired together below: when the type changes, we re-fill the size
@@ -1164,6 +1205,90 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             }
         }
 
+        /// <summary>
+        /// Captures arrow keys before they navigate the map list / element tree, and
+        /// nudges the currently selected island/starting spot by one Anno tile (=8 px,
+        /// the native grid the engine snaps to via Vector2.Normalize) per tap, or
+        /// 8 tiles (=64 px) with Shift. Skipped when a text input has focus so typing
+        /// in NumericUpDown / TextBox keeps working as usual.
+        /// </summary>
+        private void OnTunnelArrowKeys(object? sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Left && e.Key != Key.Right
+                && e.Key != Key.Up && e.Key != Key.Down)
+                return;
+            // Bail out if a text-editing control has focus.
+            var focused = FocusManager?.GetFocusedElement();
+            if (focused is TextBox || focused is NumericUpDown || focused is AutoCompleteBox)
+                return;
+            // NumericUpDown wraps a TextBox; its inner TextBox is what actually has
+            // focus when the user is typing. Walk up the parent chain to detect.
+            for (var p = focused as Visual; p is not null; p = p.GetVisualParent())
+            {
+                if (p is NumericUpDown || p is AutoCompleteBox)
+                    return;
+            }
+            // Always swallow arrow keys when an island/spot is selected, even if the
+            // nudge is clamped to the current edge (no movement possible). Otherwise
+            // the flèche bubbles up to the maps ListBox / element TreeView and steals
+            // the selection — which is exactly what we're trying to prevent.
+            if (_selectedElementForPanel is IslandElement
+                || _selectedElementForPanel is StartingSpotElement)
+            {
+                int step = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? 64 : 8;
+                NudgeSelected(e.Key, step);
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// Move the currently selected island/starting spot by <paramref name="step"/> tiles
+        /// in the direction of the arrow key. Pushes a single undo entry so each tap
+        /// is reversible. Returns true when the move actually happened (selection was a
+        /// movable element and the new position is inside the map).
+        /// </summary>
+        private bool NudgeSelected(Key key, int step)
+        {
+            if (_selectedElementForPanel is not (IslandElement or StartingSpotElement) || _currentMap is null)
+                return false;
+            MapElement el = _selectedElementForPanel;
+            int dx = 0, dy = 0;
+            switch (key)
+            {
+                case Key.Left:  dx = -step; break;
+                case Key.Right: dx = +step; break;
+                case Key.Up:    dy = +step; break; // Anno Y is up
+                case Key.Down:  dy = -step; break;
+                default: return false;
+            }
+            int rawSize = el is IslandElement isl && isl.SizeInTiles > 0 ? isl.SizeInTiles : 24;
+            int size = System.Math.Clamp(rawSize, 24, System.Math.Max(24, _currentMap.Size.X));
+            int maxX = System.Math.Max(0, _currentMap.Size.X - size);
+            int maxY = System.Math.Max(0, _currentMap.Size.Y - size);
+            int newX = System.Math.Clamp(el.Position.X + dx, 0, maxX);
+            int newY = System.Math.Clamp(el.Position.Y + dy, 0, maxY);
+            if (newX == el.Position.X && newY == el.Position.Y) return false;
+
+            var oldPos = new Vector2(el.Position);
+            var newPos = new Vector2(newX, newY);
+            // Apply the move FIRST, then record an undo entry — same pattern the
+            // mouse drag uses. UndoRedoStack.Do() only memoises old/new state, it
+            // doesn't replay the change, so an unapplied entry would silently no-op.
+            el.Position = newPos;
+            UndoRedoStack.Instance.Do(new MapElementTransformStackEntry(el, oldPos, newPos));
+            // Light refresh: just reposition the existing visual rather than rebuilding
+            // the whole canvas + refit the viewport. SetMap() would zoom-reset and
+            // SelectElement() would re-flash + re-scroll on every keypress, which is
+            // jarring when the user is repeatedly nudging an island into place.
+            // The selection (and its border highlight) is already on this element so
+            // there's nothing else to do beyond the position update + the live readout.
+            _mapRenderer?.RefreshElementPositions();
+            OnMapElementMovedLive(this, el);
+            RebuildElementsTree();
+            RefreshIssuesPanel();
+            return true;
+        }
+
         private void OnUndoClicked(object? sender, RoutedEventArgs e) => DoUndo();
         private void OnRedoClicked(object? sender, RoutedEventArgs e) => DoRedo();
 
@@ -1338,15 +1463,39 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 return;
             }
 
+            // Severity-aware colors. "error" issues represent things the engine WILL
+            // get wrong at runtime (red), "warn" things the user should review (orange),
+            // "info" advisory only (gold). Pick the worst severity for the header.
+            bool hasError = issues.Any(i => i.Severity == "error");
+            bool hasWarn  = issues.Any(i => i.Severity == "warn");
+            IBrush headerBrush = hasError
+                ? new SolidColorBrush(Color.Parse("#FF1744"))   // red
+                : hasWarn
+                    ? new SolidColorBrush(Color.Parse("#FF9800"))   // orange
+                    : new SolidColorBrush(Color.Parse("#F5C842"));  // gold
+
             _issuesPanel.Children.Add(new TextBlock
             {
                 Text = Localizer.Current.Format("main.issues_count", issues.Count),
-                Foreground = new SolidColorBrush(Color.Parse("#F5C842")),
+                Foreground = headerBrush,
                 FontSize = 12,
                 FontWeight = FontWeight.SemiBold
             });
             foreach (var issue in issues)
             {
+                IBrush lineBrush = issue.Severity switch
+                {
+                    "error" => new SolidColorBrush(Color.Parse("#FF1744")),
+                    "warn"  => new SolidColorBrush(Color.Parse("#FF9800")),
+                    _       => Brushes.LightGray
+                };
+                string bullet = issue.Severity switch
+                {
+                    "error" => "  ✖ ",
+                    "warn"  => "  ⚠ ",
+                    _       => "  • "
+                };
+
                 // If the issue has at least one target element, render the line as a
                 // clickable button that selects the element on the canvas. Otherwise
                 // (PA inverted, etc.) keep it as plain text.
@@ -1355,13 +1504,15 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                     int cursor = 0; // cycles through targets on repeated clicks
                     var btn = new Button
                     {
-                        Content = "  • " + issue.Message,
+                        Content = bullet + issue.Message,
                         Background = Brushes.Transparent,
                         BorderThickness = new Thickness(0),
                         Padding = new Thickness(0, 1),
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                         HorizontalContentAlignment = HorizontalAlignment.Left,
                         FontSize = 11,
+                        FontWeight = issue.Severity == "error" ? FontWeight.SemiBold : FontWeight.Normal,
+                        Foreground = lineBrush,
                         Cursor = new global::Avalonia.Input.Cursor(global::Avalonia.Input.StandardCursorType.Hand)
                     };
                     ToolTip.SetTip(btn, issue.Targets.Count > 1
@@ -1379,9 +1530,10 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 {
                     _issuesPanel.Children.Add(new TextBlock
                     {
-                        Text = "  • " + issue.Message,
-                        Opacity = 0.8,
+                        Text = bullet + issue.Message,
+                        Foreground = lineBrush,
                         FontSize = 11,
+                        FontWeight = issue.Severity == "error" ? FontWeight.SemiBold : FontWeight.Normal,
                         TextWrapping = TextWrapping.Wrap
                     });
                 }
@@ -1584,6 +1736,16 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         {
             RebuildElementsTree();
             RefreshIssuesPanel();
+        }
+
+        // Live-update the Position readout in the right pane while the user drags.
+        // Fires per pointer-move frame (cheap: just rewrites a TextBlock string), so the
+        // user gets the current X/Y in real time without waiting for the drag commit.
+        private void OnMapElementMovedLive(object? sender, MapElement element)
+        {
+            if (_positionValueText is null) return;
+            if (!ReferenceEquals(_positionTrackedElement, element)) return;
+            _positionValueText.Text = $"({element.Position.X}, {element.Position.Y})";
         }
 
         // ------------------- Replace (convert Random ↔ Fixed) -------------------

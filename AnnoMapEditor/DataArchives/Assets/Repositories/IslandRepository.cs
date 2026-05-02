@@ -127,6 +127,7 @@ namespace AnnoMapEditor.DataArchives.Assets.Repositories
                     IslandType = islandTypes,
                     IslandSize = new[] { islandSize },
                     SizeInTiles = fixedIsland.SizeInTiles,
+                    ActiveMapRect = fixedIsland.ActiveMapRect,
                     Slots = fixedIsland.Slots,
                 });
             }

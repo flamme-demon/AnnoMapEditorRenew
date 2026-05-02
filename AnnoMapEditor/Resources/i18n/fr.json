@@ -89,6 +89,8 @@
   "main.issue.starter_outside_pa": "Point de départ #{0} hors zone jouable",
   "main.issue.duplicate_position": "{0} éléments partagent la position {1}",
   "main.issue.pa_inverted": "Zone jouable inversée (x2 ≤ x1 ou y2 ≤ y1)",
+  "main.issue.random_large_outside_init": "Random Large à ({0}, {1}) hors zone jouable initiale (cadre vert) — non générée par le jeu",
+  "main.tooltip.random_large_outside_init": "Non géré par le jeu\nLes îles Random Large doivent rester entièrement dans le cadre vert (zone jouable initiale). Hors de ce cadre, le moteur Anno 117 refuse de les générer — l'île sera simplement absente en partie.",
   "main.playable_section": "Zone jouable",
   "main.playable_x1": "Gauche (x1)",
   "main.playable_y1": "Haut    (y1)",

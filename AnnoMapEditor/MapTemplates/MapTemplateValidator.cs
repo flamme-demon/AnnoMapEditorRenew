@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using AnnoMapEditor.MapTemplates.Enums;
 using AnnoMapEditor.MapTemplates.Models;
 using AnnoMapEditor.Utilities;
 
@@ -77,6 +78,37 @@ namespace AnnoMapEditor.MapTemplates
             // here would yield 6 false positives on every official map. The user can
             // still tighten the PA via the side panel handles when a continental's
             // outline actually leaves room for ships to sail around.
+
+            // 4. Random Large islands escaping the InitialPlayableArea (green frame on
+            //    DLC1 expanded maps): the engine refuses to spawn them at runtime, so
+            //    the user gets an island simply missing from their game session. The
+            //    canvas already paints them with a red veil; we add a matching error
+            //    line so the issue is also visible from the bottom-left issues panel.
+            //    Confirmed for random Large in-game — Medium/Small are fine and fixed
+            //    has not been tested, hence the strict "RandomIslandElement of size
+            //    Large" gate.
+            var initPa = map.InitialPlayableArea;
+            if (initPa.Width > 0 && initPa.Height > 0)
+            {
+                int initX2 = initPa.X + initPa.Width;
+                int initY2 = initPa.Y + initPa.Height;
+                foreach (var rnd in map.Elements.OfType<RandomIslandElement>())
+                {
+                    if (rnd.IslandSize != IslandSize.Large || !rnd.HasExplicitSize)
+                        continue;
+                    int s = rnd.SizeInTiles > 0 ? rnd.SizeInTiles : 0;
+                    int x = rnd.Position.X, y = rnd.Position.Y;
+                    bool inside = x >= initPa.X && y >= initPa.Y
+                        && (x + s) <= initX2 && (y + s) <= initY2;
+                    if (!inside)
+                    {
+                        issues.Add(new Issue("error",
+                            Localizer.Current.Format(
+                                "main.issue.random_large_outside_init", x, y),
+                            new MapElement[] { rnd }));
+                    }
+                }
+            }
 
             return issues;
         }

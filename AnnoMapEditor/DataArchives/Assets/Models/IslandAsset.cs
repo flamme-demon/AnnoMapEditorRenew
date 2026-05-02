@@ -26,6 +26,14 @@ namespace AnnoMapEditor.DataArchives.Assets.Models
 
         public int SizeInTiles { get; init; }
 
+        /// <summary>
+        /// [x1, y1, x2, y2] of the actual habitable terrain inside the SizeInTiles square,
+        /// pulled from the .a7m's <c>ActiveMapRect</c>. Used by the canvas to render the
+        /// island at the size you'd see on the in-game minimap (the surrounding buffer is
+        /// just out-of-bounds ocean). Null on assets that don't ship the field.
+        /// </summary>
+        public int[]? ActiveMapRect { get; init; }
+
         public IReadOnlyDictionary<long, Slot> Slots { get; init; }
     }
 }
