@@ -118,6 +118,34 @@ namespace AnnoMapEditor.UI.Avalonia.ViewModels
         }
     }
 
+    /// <summary>
+    /// Either a single map (leaf) or a mod group containing multiple maps. Used by the
+    /// left-pane TreeView so a mod with 6 difficulty variants doesn't pollute the list
+    /// with 6 sibling rows.
+    /// </summary>
+    public class MapListEntry
+    {
+        public string Header { get; set; }
+        public string SubHeader { get; set; }
+        public MapListItem? Item { get; }
+        public System.Collections.ObjectModel.ObservableCollection<MapListEntry> Children { get; } = new();
+        public bool IsGroup => Item is null;
+
+        public MapListEntry(MapListItem item)
+        {
+            Item = item;
+            Header = item.DisplayName;
+            SubHeader = item.SubLabel;
+        }
+
+        public MapListEntry(string header, string subHeader)
+        {
+            Item = null;
+            Header = header;
+            SubHeader = subHeader;
+        }
+    }
+
     public class DlcFilter : ObservableBase
     {
         public string Id { get; }

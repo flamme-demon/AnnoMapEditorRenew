@@ -1,4 +1,4 @@
-﻿using Anno.FileDBModels.Anno1800.MapTemplate;
+﻿using AnnoMapEditor.MapTemplates.Serializing.Models;
 using AnnoMapEditor.DataArchives;
 using AnnoMapEditor.DataArchives.Assets.Models;
 using AnnoMapEditor.DataArchives.Assets.Repositories;
@@ -241,21 +241,67 @@ namespace AnnoMapEditor.MapTemplates.Models
             base.ToTemplate(resultElement);
 
             resultElement.MapFilePath = _islandAsset.FilePath;
-            resultElement.Rotation90  = _randomizeRotation ? null : Rotation;
+            // Vanilla DLC1 always emits <Rotation90> on every fixed island (even =0). Emitting
+            // null would drop the tag entirely and the engine reads "no rotation locked" as
+            // "randomize" — different behaviour from vanilla and source of subtle bugs at
+            // load time. Always serialize a concrete byte: the user-set Rotation if any,
+            // otherwise 0 (= no rotation).
+            resultElement.Rotation90  = (byte)(Rotation ?? 0);
+
+            // The DLC1 continental asset is the ONLY one that should be tagged as continental.
+            // Looking only at the filename avoids false positives from inherited tags on
+            // non-continental fixed islands previously exported by buggy editor versions.
+            bool isContinentalAsset =
+                _islandAsset?.FilePath?.Contains("continental", System.StringComparison.OrdinalIgnoreCase) == true;
+            bool isExpandedMap = MapTemplate.IsExportingExpandedMap;
 
             //
-            // Randomization of fertilities is controlled by the flag RandomizeFertilities. Instead
-            // of using true/false, true is replaced by null.
+            // Anno 117 RandomizeFertilities convention:
+            //   - Expanded map (DLC1, 2688): NO fixed island emits RandomizeFertilities, the
+            //     FertilitySet binding handles fertility selection instead.
+            //   - Non-expanded map (vanilla 2048, Taludas-style): emit RandomizeFertilities=true
+            //     explicitly so the engine randomizes from the regional pool.
             //
-            // Randomized fertilities:
-            //   RandomizeFertilities = null
-            //   FertilityGuids = []
-            //
-            // Fixed Fertilities:
-            //   RandomizedFertilities = false
-            //   FertilityGuids = [123456, ...]
-            //
-            resultElement.RandomizeFertilities = _randomizeFertilities ? null : false;
+            resultElement.RandomizeFertilities = isExpandedMap ? null : (bool?)_randomizeFertilities;
+
+            // Round-trip the empty container tags (presence is what matters for the engine
+            // — content is always empty in vanilla anyway).
+            if (_sourceElement is not null)
+            {
+                resultElement.FertilitiesPerAreaIndex = _sourceElement.FertilitiesPerAreaIndex;
+                resultElement.MineSlotActivation     = _sourceElement.MineSlotActivation;
+                resultElement.FertilitySetGUIDs      = _sourceElement.FertilitySetGUIDs;
+            }
+            // Vanilla DLC1 expanded templates emit the 5 tags on EVERY fixed island, not just
+            // continentals. Auto-generate them when the parent map is expanded so freshly-
+            // created/converted fixed islands stay vanilla-compatible.
+            // (isExpandedMap is computed earlier in the method.)
+            if (isContinentalAsset || isExpandedMap)
+            {
+                resultElement.FertilitiesPerAreaIndex ??= new();
+                resultElement.MineSlotActivation     ??= new();
+                resultElement.FertilitySetGUIDs      ??= new();
+                // IslandSize.value.id encodes the asset's physical size class so the engine
+                // reserves a terrain footprint of the right dimensions. Wrong size → terrain
+                // generated for a smaller bucket than the .a7m needs → island spills into
+                // the ocean (the "fixed island underwater" bug).
+                //   Small/Default = 0   Medium = 1   Large = 2   ExtraLarge = 3   Continental = 6
+                //
+                // We DON'T trust _sourceElement.IslandSize here: a mod that was exported with a
+                // buggy older version of the editor may carry id=0000 on a Large asset, and we
+                // want to overwrite it with the correct value computed from the asset itself.
+                short sizeId;
+                if (isContinentalAsset)
+                {
+                    sizeId = 6;
+                }
+                else
+                {
+                    var assetSize = _islandAsset?.IslandSize?.FirstOrDefault();
+                    sizeId = (short)(assetSize?.ElementValue ?? 0);
+                }
+                resultElement.IslandSize = new() { value = new() { id = sizeId } };
+            }
             if (_randomizeFertilities)
                 resultElement.FertilityGuids = Array.Empty<int>();
             else
@@ -273,7 +319,14 @@ namespace AnnoMapEditor.MapTemplates.Models
             // Fixed slots
             //   MineSlotMapping = [(8252351, 1000063), (162612, 0), ...]
             //
-            if (_randomizeSlots)
+            // Vanilla DLC1 (continental + campaign fixed) NEVER emits MineSlotMapping. Including
+            // it forces the engine onto a slot-randomisation path that interferes with the
+            // FertilitySet binding. Only Anno 1800 / Taludas-style 2048 maps emit this tag.
+            if (isContinentalAsset || isExpandedMap)
+            {
+                resultElement.MineSlotMapping = null;
+            }
+            else if (_randomizeSlots)
                 resultElement.MineSlotMapping = new();
             else
                 resultElement.MineSlotMapping = IslandAsset.Slots.Values
@@ -288,12 +341,56 @@ namespace AnnoMapEditor.MapTemplates.Models
                     .ToList();
 
             // despite its name, all fixed islands must have a RandomIslandConfig.
+            // TypePerConstructionArea is always regenerated from the asset shape — we don't
+            // trust _sourceElement here because a buggy older export may have stored 3 pairs
+            // on a non-continental island, which makes the engine reject the construction
+            // wiring (= the fixed island lands in the water).
+            //   - Continental (3 ConstructionAreas): 3 pairs (areaIndex 0/1/2 → id 0).
+            //   - Other fixed in expanded map (1 CA): 1 pair (areaIndex 1 → id 1) — observed
+            //     on vanilla DLC1 campaign roman_island_large_02 and similar starters.
+            //   - Non-expanded map (Taludas 2048): no TypePerConstructionArea at all.
+            List<Tuple<short, IslandTypeRef>>? inheritedTpca = null;
+            if (isContinentalAsset)
+            {
+                inheritedTpca = new()
+                {
+                    new(0, new IslandTypeRef { value = new() { id = 0 } }),
+                    new(1, new IslandTypeRef { value = new() { id = 0 } }),
+                    new(2, new IslandTypeRef { value = new() { id = 0 } })
+                };
+            }
+            else if (isExpandedMap)
+            {
+                inheritedTpca = new()
+                {
+                    new(1, new IslandTypeRef { value = new() { id = 1 } })
+                };
+            }
+
+            // Continentals MUST emit <Type /> empty — putting Type=Starter (or anything else)
+            // breaks the FertilitySet wiring, leaving the island with Obsidian only and no
+            // valid spawn binding. We override the user's choice silently here. The UI will
+            // also disable the Type combo on continental assets (see MainWindow Properties).
+            //
+            // For NON-continentals, the inverse rule applies: vanilla DLC1 expanded ALWAYS
+            // emits a non-empty <Type> (Starter/ThirdParty/PirateIsland depending on role).
+            // A bare <Type /> tells the engine "treat this as continental class", routing
+            // the island through the Obsidian-only fertility branch — that's the root
+            // cause of "all my fixed islands have obsidian" reported on user mods. When
+            // the user hasn't picked a specific role, fall back to id=7 (= Normal explicit),
+            // the same code vanilla emits on sized random islands outside the 2020 frame.
+            short? configTypeId;
+            if (isContinentalAsset)
+                configTypeId = null;
+            else
+                configTypeId = IslandType.ElementValue ?? 7;
             resultElement.RandomIslandConfig = new()
             {
                 value = new()
                 {
-                    Type = new() { id = IslandType.ElementValue },
-                    Difficulty = new() { id = IslandDifficulty?.ElementValue }
+                    Type = new() { id = configTypeId },
+                    Difficulty = new() { id = IslandDifficulty?.ElementValue },
+                    TypePerConstructionArea = inheritedTpca
                 }
             };
         }

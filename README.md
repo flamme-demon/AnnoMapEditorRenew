@@ -7,20 +7,33 @@ and migrated from WPF to Avalonia 11.
 > Not affiliated with Ubisoft. Anno 1800 and Anno 117 — Pax Romana are trademarks
 > of Ubisoft Entertainment.
 
-## What it does today (v0.7.0-fork.1)
+## What it does today (v0.8.0)
 
 - Reads `.a7tinfo` BBDom V1/V2/V3 files (vanilla maps **and** existing mods).
+- Saves bit-equivalent to vanilla DLC1 expanded templates — fixed islands,
+  random islands, starting spots all serialize with the exact tag set the
+  game expects (`FertilitiesPerAreaIndex`, `MineSlotActivation`,
+  `FertilitySetGUIDs`, `IslandSize`, `TypePerConstructionArea`, `Rotation90`,
+  explicit `<Type>` codes outside the 2020 frame).
 - Renders the map: islands (with thumbnails), starting spots, NPCs, playable area.
+- Two-tone overlay: live `PlayableArea` (teal) and `InitialPlayableArea`
+  (green, the DLC1 2020 reference frame).
+- "Vue jeu / Vue plate" toggle: rotate the canvas to the in-game diamond view
+  (-45°). Persisted across sessions.
 - Click-to-select, drag-to-move islands and starting spots, snap to tile grid.
+- Drag-resize the playable area with 8 yellow handles.
 - Edit `IslandType`, `IslandSize`, fixed-island flags (rotation / fertilities / slots).
 - Duplicate, rotate, delete islands. Photoshop-style undo / redo with history list.
 - Categorized tree view of all map elements (Players, Starter islands, Random,
-  Fixed, NPCs, Decoration, Random NPCs).
+  Fixed, NPCs, Decoration, Random NPCs, Zones).
+- Island picker dialog with preview thumbnails when changing a fixed island's asset.
 - Exports as a working **Anno 117 mod** (`.a7t` + `.a7te` + `.a7tinfo`,
   `assets.xml`, 12 localized text files, `modinfo.json`) — including the
   `<ModOp Add="//MapTemplateTypes">` registration that makes the new
   `MapTemplateType` show up as a category in the New Game menu.
 - Re-edit any installed mod containing an `.a7tinfo` (not just the editor's own).
+- CLI modes for power users: `--xml`, `--xml-decoded`, `--roundtrip-v3`
+  (handy to diff your mod against vanilla `.a7tinfo`).
 - French / English UI, hot-swappable from the start screen.
 
 See [ROADMAP.md](ROADMAP.md) for what's still missing vs. the original

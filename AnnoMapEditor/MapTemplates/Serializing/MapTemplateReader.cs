@@ -1,4 +1,4 @@
-﻿using Anno.FileDBModels.Anno1800.MapTemplate;
+﻿using AnnoMapEditor.MapTemplates.Serializing.Models;
 using AnnoMapEditor.DataArchives;
 using AnnoMapEditor.DataArchives.Assets.Models;
 using System;
@@ -40,14 +40,17 @@ namespace AnnoMapEditor.MapTemplates.Serializing
         public async Task<MapTemplate> FromXmlFileAsync(string filePath)
         {
             SessionAsset session = SessionAsset.DetectFromPath(filePath, DataManager.Instance.DetectedGame!.GameDefaults!);
-            Stream a7tinfoXmlStream = File.OpenRead(filePath);
+            using Stream a7tinfoXmlStream = File.OpenRead(filePath);
             return await FromXmlStreamAsync(session, a7tinfoXmlStream);
         }
 
         public async Task<MapTemplate> FromBinaryFileAsync(string filePath)
         {
             SessionAsset session = SessionAsset.DetectFromPath(filePath, DataManager.Instance.DetectedGame!.GameDefaults!);
-            Stream a7tinfoStream = File.OpenRead(filePath);
+            // `using` is critical: without it the FileStream stays open until GC, which under
+            // Wine/Proton holds a Windows-style file lock on the .a7tinfo. Re-saving the same
+            // map then fails with "the file is being used by another process".
+            using Stream a7tinfoStream = File.OpenRead(filePath);
             return await FromBinaryStreamAsync(session, a7tinfoStream);
         }
 

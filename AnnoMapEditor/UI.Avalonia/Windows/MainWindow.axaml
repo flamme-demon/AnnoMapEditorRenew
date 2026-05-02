@@ -27,7 +27,7 @@
 
         <Grid Grid.Row="1" ColumnDefinitions="380,*,320">
 
-            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,Auto,*">
+            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,Auto,*,Auto">
                 <TextBlock Grid.Row="0" Margin="20,16,20,8" FontSize="16" FontWeight="SemiBold"
                            Text="{l:L Key=main.maps_title}" />
 
@@ -51,17 +51,93 @@
                 <TextBlock Grid.Row="2" Margin="20,0,20,8" Opacity="0.6" FontSize="12"
                            x:Name="MapsCountLabel" />
 
-                <ListBox Grid.Row="3" Margin="20,0,20,16" x:Name="MapsList"
-                         SelectionChanged="OnMapSelected">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="vm:MapListItem">
+                <TreeView Grid.Row="3" Margin="20,0,20,8" x:Name="MapsList"
+                          SelectionChanged="OnMapSelected">
+                    <TreeView.ItemTemplate>
+                        <TreeDataTemplate x:DataType="vm:MapListEntry"
+                                          ItemsSource="{Binding Children}">
                             <StackPanel Spacing="2" Margin="0,4">
-                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding SubLabel}" FontSize="11" Opacity="0.7" />
+                                <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SubHeader}" FontSize="11" Opacity="0.7" />
                             </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                        </TreeDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+
+                <!-- Session properties (active once a map is loaded). Mirrors the upstream
+                     Anno 1800 editor layout: region / map size / playable area size /
+                     edit toggle, with the per-edge advanced editor tucked behind an Expander. -->
+                <Border Grid.Row="4" x:Name="SessionPropsPanel"
+                        BorderBrush="{DynamicResource SystemBaseLowColor}"
+                        BorderThickness="0,1,0,0"
+                        Padding="20,12" IsVisible="False">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{l:L Key=main.session_section}" FontSize="14" FontWeight="SemiBold" />
+
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="{l:L Key=main.session_region}" VerticalAlignment="Center" Opacity="0.7" />
+                            <TextBlock Grid.Column="1" x:Name="SessionRegionLabel" FontWeight="SemiBold" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="{l:L Key=main.session_map_size}" VerticalAlignment="Center" Opacity="0.7" />
+                            <TextBlock Grid.Column="1" x:Name="SessionMapSizeLabel" FontWeight="SemiBold" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Grid.Column="0" Text="{l:L Key=main.session_pa_size}" VerticalAlignment="Center" Opacity="0.7" />
+                            <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                <Slider Grid.Column="0" x:Name="SessionPaSlider" Margin="0,0,8,0"
+                                        Minimum="64" Maximum="4096"
+                                        ValueChanged="OnSessionPaSliderChanged"
+                                        PointerWheelChanged="OnSessionPaSliderWheel" />
+                                <TextBlock Grid.Column="1" x:Name="SessionPaSizeLabel"
+                                           VerticalAlignment="Center" FontWeight="SemiBold"
+                                           MinWidth="50" TextAlignment="Right" />
+                            </Grid>
+                        </Grid>
+
+                        <CheckBox x:Name="SessionEditPaToggle"
+                                  Content="{l:L Key=main.session_edit_pa}"
+                                  IsCheckedChanged="OnSessionEditPaToggleChanged" />
+
+                        <!-- Capped height + scroll so a noisy validator (e.g. 40+ issues on
+                             Taludas-style maps with many duplicate-position fixed islands)
+                             can't push the maps list off screen. -->
+                        <Border BorderBrush="{DynamicResource SystemBaseLowColor}" BorderThickness="0,1,0,0"
+                                Padding="0,8,0,4">
+                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel x:Name="IssuesPanel" Spacing="2" />
+                            </ScrollViewer>
+                        </Border>
+
+                        <Expander Header="{l:L Key=main.session_advanced}">
+                            <StackPanel Spacing="4" Margin="0,4,0,0">
+                                <Grid ColumnDefinitions="100,*">
+                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_x1}" VerticalAlignment="Center" />
+                                    <NumericUpDown Grid.Column="1" x:Name="PaX1Box" Increment="32" />
+                                </Grid>
+                                <Grid ColumnDefinitions="100,*">
+                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_y1}" VerticalAlignment="Center" />
+                                    <NumericUpDown Grid.Column="1" x:Name="PaY1Box" Increment="32" />
+                                </Grid>
+                                <Grid ColumnDefinitions="100,*">
+                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_x2}" VerticalAlignment="Center" />
+                                    <NumericUpDown Grid.Column="1" x:Name="PaX2Box" Increment="32" />
+                                </Grid>
+                                <Grid ColumnDefinitions="100,*">
+                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_y2}" VerticalAlignment="Center" />
+                                    <NumericUpDown Grid.Column="1" x:Name="PaY2Box" Increment="32" />
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                                    <Button Content="{l:L Key=main.playable_apply}" Click="OnApplyPlayableArea" Classes="accent" />
+                                    <Button Content="{l:L Key=main.playable_reset}" Click="OnResetPlayableArea" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*">
@@ -89,30 +165,36 @@
 
             <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseLowColor}"
                     BorderThickness="1,0,0,0">
-                <Grid RowDefinitions="*,Auto,*,Auto,160">
+                <Grid RowDefinitions="Auto,Auto,*,Auto,160">
 
-                    <!-- Top: hierarchical tree of map elements grouped by category. -->
+                    <!-- Top: hierarchical tree of map elements grouped by category. Capped at
+                         260 px tall (with internal scroll) so a long element list never pushes
+                         the Properties panel off-screen below. -->
                     <Grid Grid.Row="0" RowDefinitions="Auto,*" Margin="16,12,16,8">
                         <TextBlock Grid.Row="0" Text="{l:L Key=main.tree_title}"
                                    FontSize="14" FontWeight="SemiBold" Margin="0,0,0,6" />
-                        <TreeView Grid.Row="1" x:Name="ElementsTree"
-                                  SelectionChanged="OnTreeSelectionChanged">
-                            <TreeView.ItemTemplate>
-                                <TreeDataTemplate x:DataType="vm:MapElementNode"
-                                                  ItemsSource="{Binding Children}">
-                                    <TextBlock Text="{Binding Label}"
-                                               FontWeight="{Binding IsCategory,
-                                                   Converter={x:Static l:BoolToFontWeight.Instance}}" />
-                                </TreeDataTemplate>
-                            </TreeView.ItemTemplate>
-                        </TreeView>
+                        <ScrollViewer Grid.Row="1" MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                            <TreeView x:Name="ElementsTree"
+                                      SelectionChanged="OnTreeSelectionChanged">
+                                <TreeView.ItemTemplate>
+                                    <TreeDataTemplate x:DataType="vm:MapElementNode"
+                                                      ItemsSource="{Binding Children}">
+                                        <TextBlock Text="{Binding Label}"
+                                                   FontWeight="{Binding IsCategory,
+                                                       Converter={x:Static l:BoolToFontWeight.Instance}}" />
+                                    </TreeDataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
+                        </ScrollViewer>
                     </Grid>
 
                     <Border Grid.Row="1" BorderBrush="{DynamicResource SystemBaseLowColor}"
                             BorderThickness="0,1,0,0" />
 
-                    <!-- Middle: properties panel for the selected element. -->
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="16">
+                    <!-- Middle: properties panel for the selected element. Always-visible
+                         scrollbar so the user knows the panel is scrollable, even on short
+                         content (avoids the "where is the scrollbar?" surprise on randoms). -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" Padding="16">
                         <StackPanel Spacing="12">
                             <TextBlock Text="{l:L Key=main.properties}" FontSize="14" FontWeight="SemiBold" />
                             <TextBlock x:Name="SelHint" Opacity="0.6" FontSize="12"

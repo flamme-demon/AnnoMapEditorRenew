@@ -88,7 +88,11 @@ namespace AnnoMapEditor.DataArchives.Assets.Repositories
                 string filePath = fixedIsland.FilePath;
                 randomByFilePath.TryGetValue(filePath, out RandomIslandAsset? randomIsland);
 
-                IslandSize islandSize = IslandSize.All.FirstOrDefault(s => fixedIsland.SizeInTiles <= s.DefaultSizeInTiles)!;
+                // Trust the asset filename first (extralarge_03 → ExtraLarge, continental_01 →
+                // Continental, …). The tile-count heuristic is only a fallback for assets whose
+                // filename doesn't carry a size token (custom mods, unusual naming).
+                IslandSize islandSize = IslandSize.FromAssetFileName(filePath)
+                    ?? IslandSize.All.FirstOrDefault(s => fixedIsland.SizeInTiles <= s.DefaultSizeInTiles)!;
 
                 // resolve slot guids to assets ignoring WorkAreas
                 foreach (Slot slot in fixedIsland.Slots.Values)
@@ -97,6 +101,22 @@ namespace AnnoMapEditor.DataArchives.Assets.Repositories
                         slot.SlotAsset = slotAsset!;
                 }
 
+                // Volcanic detection has to look at BOTH the .a7m file path AND the asset
+                // DisplayName from assets.xml, because Anno 117 names them inconsistently:
+                // file = "roman_dlc01_island_medium_02.a7m", asset DisplayName = "roman_volcanic_medium02".
+                // Either one carrying "volcanic" / "vesuv" is enough to surface the volcano label.
+                IslandType nameType = DetectIslandTypeFromPath(filePath);
+                string displayName = randomIsland?.Name ?? Path.GetFileNameWithoutExtension(filePath);
+                bool nameIsVolcanic =
+                       displayName.Contains("volcanic", StringComparison.OrdinalIgnoreCase)
+                    || displayName.Contains("vesuv",    StringComparison.OrdinalIgnoreCase)
+                    || filePath.Contains("volcanic",    StringComparison.OrdinalIgnoreCase)
+                    || filePath.Contains("vesuv",       StringComparison.OrdinalIgnoreCase);
+
+                IslandType[] islandTypes = (nameType == IslandType.VolcanicIsland || nameIsVolcanic)
+                    ? new[] { IslandType.VolcanicIsland }
+                    : (randomIsland?.IslandType?.ToArray() ?? new[] { nameType });
+
                 Add(new()
                 {
                     FilePath = filePath,
@@ -104,7 +124,7 @@ namespace AnnoMapEditor.DataArchives.Assets.Repositories
                     Thumbnail = fixedIsland.Thumbnail,
                     Region = randomIsland?.IslandRegion ?? RegionAsset.DetectFromPath(filePath, _detectGame.GameDefaults),
                     IslandDifficulty = randomIsland?.IslandDifficulty ?? new[] { IslandDifficulty.Normal },
-                    IslandType = randomIsland?.IslandType ?? new[] { DetectIslandTypeFromPath(filePath) },
+                    IslandType = islandTypes,
                     IslandSize = new[] { islandSize },
                     SizeInTiles = fixedIsland.SizeInTiles,
                     Slots = fixedIsland.Slots,

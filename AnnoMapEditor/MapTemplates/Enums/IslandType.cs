@@ -78,8 +78,18 @@ namespace AnnoMapEditor.MapTemplates.Enums
                 case "moderate_3rdparty03_01":
                 case "colony01_3rdparty04_01":
                     return PirateIsland;
+                // The unique DLC1 "continental" asset is the Vesuvius island — visually a
+                // volcano in-game, so it makes sense to label it Volcanic instead of Normal.
+                case "roman_dlc01_island_continental_01":
+                    return VolcanicIsland;
+
                 default:
                     if (fileName.Contains("_d_") || fileName.Contains("_dst_") || fileName.Contains("_battlesite_")|| fileName.Contains("_encounter_")) return Decoration;
+                    // Future-proofing: if Anno ever ships explicit "volcanic" / "vesuv" assets,
+                    // we surface them with the dedicated label and red colour automatically.
+                    if (fileName.Contains("volcanic", System.StringComparison.OrdinalIgnoreCase)
+                        || fileName.Contains("vesuv", System.StringComparison.OrdinalIgnoreCase))
+                        return VolcanicIsland;
                     return Normal;
             }
         }

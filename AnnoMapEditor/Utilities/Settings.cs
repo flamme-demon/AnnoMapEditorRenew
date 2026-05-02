@@ -87,6 +87,31 @@ namespace AnnoMapEditor.Utilities
             }
         }
 
+        /// <summary>
+        /// CSV-encoded set of DLC filter ids the user has explicitly toggled OFF in the map list.
+        /// Stored as a single string for compatibility with the legacy settings backing store.
+        /// </summary>
+        public System.Collections.Generic.HashSet<string> DisabledDlcFilters
+        {
+            get
+            {
+                string raw = UserSettings.Default.DisabledDlcFilters ?? string.Empty;
+                return new System.Collections.Generic.HashSet<string>(
+                    raw.Split(',', System.StringSplitOptions.RemoveEmptyEntries),
+                    System.StringComparer.OrdinalIgnoreCase);
+            }
+            set
+            {
+                string serialized = string.Join(",", value);
+                if (serialized != (UserSettings.Default.DisabledDlcFilters ?? ""))
+                {
+                    UserSettings.Default.DisabledDlcFilters = serialized;
+                    UserSettings.Default.Save();
+                    OnPropertyChanged(nameof(DisabledDlcFilters));
+                }
+            }
+        }
+
 
         private Settings()
         {

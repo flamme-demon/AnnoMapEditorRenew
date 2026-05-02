@@ -1,4 +1,4 @@
-﻿using Anno.FileDBModels.Anno1800.MapTemplate;
+﻿using AnnoMapEditor.MapTemplates.Serializing.Models;
 
 namespace AnnoMapEditor.MapTemplates.Models
 {
