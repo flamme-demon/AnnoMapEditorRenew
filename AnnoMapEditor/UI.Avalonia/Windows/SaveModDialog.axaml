@@ -3,21 +3,37 @@
         xmlns:l="using:AnnoMapEditor.Utilities"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.SaveModDialog"
         Title="{l:L Key=save_dialog.title}"
-        Width="540" Height="240"
+        Width="540" Height="280"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
-    <Grid RowDefinitions="*,Auto" Margin="20">
-        <StackPanel Grid.Row="0" Spacing="12">
-            <TextBlock Text="{l:L Key=save_dialog.name}" FontWeight="SemiBold" />
-            <TextBox x:Name="NameBox" Watermark="{l:L Key=save_dialog.name_watermark}" />
-            <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
-                       Text="{l:L Key=save_dialog.help}" />
-            <TextBlock TextWrapping="Wrap" Opacity="0.5" FontSize="11"
-                       Text="{l:L Key=save_dialog.warning}" />
-        </StackPanel>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
-            <Button Content="{l:L Key=save_dialog.cancel}" Click="OnCancel" />
-            <Button Content="{l:L Key=save_dialog.save}" Click="OnSave" Classes="accent" />
-        </StackPanel>
-    </Grid>
+        CanResize="False"
+        Background="{DynamicResource ConceptInk900Brush}"
+        Foreground="{DynamicResource ConceptTextBrush}">
+    <Border Classes="modal" Margin="0" CornerRadius="0" BorderThickness="0"
+            Background="{DynamicResource ConceptInk900Brush}">
+        <Grid RowDefinitions="Auto,*,Auto" Margin="24,20">
+            <StackPanel Grid.Row="0" Spacing="4" HorizontalAlignment="Center" Margin="0,0,0,16">
+                <TextBlock Text="EXPORTER LE MOD" Classes="t-eyebrow" HorizontalAlignment="Center" />
+                <TextBlock Text="{l:L Key=save_dialog.title}" Classes="modal-title" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Spacing="10">
+                <TextBlock Text="{l:L Key=save_dialog.name}" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ConceptTextBrush}" />
+                <TextBox x:Name="NameBox" Classes="input"
+                         Watermark="{l:L Key=save_dialog.name_watermark}" />
+                <TextBlock TextWrapping="Wrap" FontSize="12"
+                           Foreground="{DynamicResource ConceptTextDimBrush}"
+                           Text="{l:L Key=save_dialog.help}" />
+                <TextBlock TextWrapping="Wrap" FontSize="11"
+                           Foreground="{DynamicResource ConceptTextMuteBrush}"
+                           Text="{l:L Key=save_dialog.warning}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"
+                        Spacing="8" Margin="0,16,0,0">
+                <Button Classes="btn secondary" Content="{l:L Key=save_dialog.cancel}" Click="OnCancel" />
+                <Button Classes="btn primary" Content="{l:L Key=save_dialog.save}" Click="OnSave" />
+            </StackPanel>
+        </Grid>
+    </Border>
 </Window>

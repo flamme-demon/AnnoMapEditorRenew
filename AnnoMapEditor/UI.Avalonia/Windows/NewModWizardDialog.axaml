@@ -2,111 +2,128 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.NewModWizardDialog"
         Title="Nouveau mod"
-        Width="640" Height="560"
+        Width="640" Height="600"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="False"
+        Background="{DynamicResource ConceptInk900Brush}"
+        Foreground="{DynamicResource ConceptTextBrush}">
 
-    <Border Classes="anno-panel" Margin="20">
-        <Grid RowDefinitions="Auto,*,Auto">
-            <Border Grid.Row="0" Classes="anno-panel-header" CornerRadius="20,20,0,0">
-                <TextBlock Text="✦  Créer un nouveau mod" FontSize="16" FontWeight="SemiBold"
-                           Foreground="#F4ECD8" HorizontalAlignment="Center" />
-            </Border>
+    <Grid RowDefinitions="Auto,*,Auto" Margin="0">
 
-            <ScrollViewer Grid.Row="1" Padding="22,16">
-                <StackPanel Spacing="14">
+        <!-- Header (concept modale style) -->
+        <Border Grid.Row="0" Padding="24,20"
+                BorderBrush="{DynamicResource ConceptBorderBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <TextBlock Text="ATELIER" Classes="t-eyebrow" HorizontalAlignment="Center" />
+                <TextBlock Text="Créer un nouveau mod" Classes="modal-title" />
+                <Border Classes="divider-ornate" Width="160" Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
 
-                    <!-- Mod name -->
-                    <StackPanel>
-                        <TextBlock Text="Nom du mod" FontWeight="SemiBold" Margin="0,0,0,4" />
-                        <TextBox Watermark="ex: Four Corner Battle"
-                                 Background="{DynamicResource AnnoBgLighterBrush}"
-                                 Foreground="{DynamicResource AnnoTextBrush}"
-                                 BorderBrush="{DynamicResource AnnoButtonBorderBrush}" />
-                    </StackPanel>
+        <!-- Body (scrollable form) -->
+        <ScrollViewer Grid.Row="1" Padding="32,20">
+            <StackPanel Spacing="16">
 
-                    <!-- Mod ID (auto) -->
-                    <StackPanel>
-                        <TextBlock Text="Identifiant technique (auto)" FontWeight="SemiBold" Margin="0,0,0,4" />
-                        <TextBox Text="ame-four-corner-battle"  IsReadOnly="True"
-                                 Background="{DynamicResource AnnoBgDarkerBrush}"
-                                 Foreground="{DynamicResource AnnoTextBrush}"
-                                 BorderBrush="{DynamicResource AnnoButtonBorderBrush}" />
-                    </StackPanel>
-
-                    <!-- Type de carte -->
-                    <StackPanel>
-                        <TextBlock Text="Type de carte" FontWeight="SemiBold" Margin="0,0,0,4" />
-                        <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch"
-                                  Background="{DynamicResource AnnoBgLighterBrush}"
-                                  Foreground="{DynamicResource AnnoTextBrush}">
-                            <ComboBoxItem>Corners (4 quadrants)</ComboBoxItem>
-                            <ComboBoxItem>Chain (chaîne d'îles)</ComboBoxItem>
-                            <ComboBoxItem>Donut (anneau)</ComboBoxItem>
-                            <ComboBoxItem>Default (libre)</ComboBoxItem>
-                            <ComboBoxItem>Personnalisé…</ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-
-                    <!-- Régions à supporter -->
-                    <StackPanel>
-                        <TextBlock Text="Régions à supporter" FontWeight="SemiBold" Margin="0,0,0,4" />
-                        <TextBlock Text="Un variant sera généré pour chaque région cochée."
-                                   Opacity="0.7" FontSize="11" Margin="0,0,0,6" />
-                        <Grid ColumnDefinitions="*,*,*">
-                            <CheckBox Grid.Column="0" Content="🏛 Roman" IsChecked="True" />
-                            <CheckBox Grid.Column="1" Content="☘ Albion (Celtic)" />
-                            <CheckBox Grid.Column="2" Content="🐪 Egyptian" IsEnabled="False" ToolTip.Tip="DLC à venir" />
-                        </Grid>
-                    </StackPanel>
-
-                    <!-- Difficultés -->
-                    <StackPanel>
-                        <TextBlock Text="Difficultés à générer" FontWeight="SemiBold" Margin="0,0,0,4" />
-                        <Grid ColumnDefinitions="*,*,*">
-                            <CheckBox Grid.Column="0" Content="Easy"   IsChecked="True" />
-                            <CheckBox Grid.Column="1" Content="Medium" IsChecked="True" />
-                            <CheckBox Grid.Column="2" Content="Hard" />
-                        </Grid>
-                    </StackPanel>
-
-                    <!-- Tailles (DLC1 expanded) -->
-                    <StackPanel>
-                        <TextBlock Text="Tailles" FontWeight="SemiBold" Margin="0,0,0,4" />
-                        <Grid ColumnDefinitions="*,*">
-                            <CheckBox Grid.Column="0" Content="2048 (vanilla)" IsChecked="True" />
-                            <CheckBox Grid.Column="1" Content="2688 (DLC1 expanded)" IsChecked="True" />
-                        </Grid>
-                    </StackPanel>
-
-                    <!-- Preview résumé -->
-                    <Border Background="{DynamicResource AnnoBgDarkerBrush}" CornerRadius="6"
-                            Padding="12,8" BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
-                            BorderThickness="1" Margin="0,4,0,0">
-                        <StackPanel>
-                            <TextBlock Text="Récapitulatif" FontWeight="SemiBold" Opacity="0.85" />
-                            <TextBlock Margin="0,4,0,0"
-                                       Text="4 variants seront créés : Roman Easy 2048, Roman Easy 2688, Roman Medium 2048, Roman Medium 2688."
-                                       Opacity="0.8" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
+                <!-- Mod name -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="NOM DU MOD" Classes="t-eyebrow" />
+                    <TextBox Classes="input" Watermark="ex: Four Corner Battle" />
                 </StackPanel>
-            </ScrollViewer>
 
-            <!-- Footer buttons -->
-            <Border Grid.Row="2" Padding="16,12" CornerRadius="0,0,8,8"
-                    Background="{DynamicResource AnnoBgDarkerBrush}"
-                    BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
-                    BorderThickness="0,1,0,0">
-                <Grid ColumnDefinitions="*,Auto,Auto">
-                    <TextBlock Grid.Column="0" Text="POC — fake data" Opacity="0.6" FontStyle="Italic"
-                               VerticalAlignment="Center" />
-                    <Button Grid.Column="1" Content="Annuler" Margin="0,0,8,0"
-                            Click="OnCancelClick" />
-                    <Button Grid.Column="2" Classes="accent" Content="Créer le mod"
-                            Click="OnCreateClick" />
-                </Grid>
-            </Border>
-        </Grid>
-    </Border>
+                <!-- Mod ID -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="IDENTIFIANT TECHNIQUE (AUTO)" Classes="t-eyebrow" />
+                    <TextBox Classes="input" Text="ame-four-corner-battle" IsReadOnly="True"
+                             Foreground="{DynamicResource ConceptTextDimBrush}" />
+                </StackPanel>
+
+                <!-- Type de carte -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="TYPE DE CARTE" Classes="t-eyebrow" />
+                    <ComboBox Classes="input" SelectedIndex="0" HorizontalAlignment="Stretch">
+                        <ComboBoxItem>Corners (4 quadrants)</ComboBoxItem>
+                        <ComboBoxItem>Chain (chaîne d'îles)</ComboBoxItem>
+                        <ComboBoxItem>Donut (anneau)</ComboBoxItem>
+                        <ComboBoxItem>Default (libre)</ComboBoxItem>
+                        <ComboBoxItem>Personnalisé…</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+
+                <Border Classes="divider-ornate" />
+
+                <!-- Régions -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="RÉGIONS À SUPPORTER" Classes="t-eyebrow" />
+                    <TextBlock Text="Un variant sera généré pour chaque région cochée."
+                               Foreground="{DynamicResource ConceptTextDimBrush}" FontSize="11" />
+                    <Grid ColumnDefinitions="*,*,*">
+                        <CheckBox Grid.Column="0" Content="Latium (Roman)" IsChecked="True"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                        <CheckBox Grid.Column="1" Content="Albion (Celtic)"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                        <CheckBox Grid.Column="2" Content="Désert (DLC)" IsEnabled="False"
+                                  Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                  ToolTip.Tip="DLC à venir" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- Difficultés -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="DIFFICULTÉS À GÉNÉRER" Classes="t-eyebrow" />
+                    <Grid ColumnDefinitions="*,*,*">
+                        <CheckBox Grid.Column="0" Content="Facile" IsChecked="True"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                        <CheckBox Grid.Column="1" Content="Normal" IsChecked="True"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                        <CheckBox Grid.Column="2" Content="Difficile"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- Tailles -->
+                <StackPanel Spacing="6">
+                    <TextBlock Text="TAILLES" Classes="t-eyebrow" />
+                    <Grid ColumnDefinitions="*,*">
+                        <CheckBox Grid.Column="0" Content="2048 (vanilla)" IsChecked="True"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                        <CheckBox Grid.Column="1" Content="2688 (DLC1 expanded)" IsChecked="True"
+                                  Foreground="{DynamicResource ConceptTextBrush}" />
+                    </Grid>
+                </StackPanel>
+
+                <Border Classes="divider-ornate" />
+
+                <!-- Récap -->
+                <Border CornerRadius="6" Padding="14,10"
+                        Background="{DynamicResource ConceptInk950Brush}"
+                        BorderBrush="{DynamicResource ConceptGold700Brush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="RÉCAPITULATIF" Classes="t-eyebrow" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                   Foreground="{DynamicResource ConceptGold300Brush}"
+                                   Text="4 variants seront créés : Latium Easy 2048, Latium Easy 2688, Latium Medium 2048, Latium Medium 2688." />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Padding="24,16"
+                Background="{DynamicResource ConceptInk950Brush}"
+                BorderBrush="{DynamicResource ConceptBorderBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="POC — données mock"
+                           Foreground="{DynamicResource ConceptTextMuteBrush}"
+                           FontStyle="Italic" FontSize="11"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="btn secondary"
+                        Content="Annuler" Margin="0,0,8,0" Click="OnCancelClick" />
+                <Button Grid.Column="2" Classes="btn primary"
+                        Content="Créer le mod" Click="OnCreateClick" />
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

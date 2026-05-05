@@ -3,17 +3,33 @@
         x:Class="AnnoMapEditor.BootstrapWindow"
         Title="Anno 117 Map Editor"
         Width="640" Height="360"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ConceptInk900Brush}"
+        Foreground="{DynamicResource ConceptTextBrush}">
     <Grid RowDefinitions="*,Auto" Margin="32">
-        <StackPanel VerticalAlignment="Center" Spacing="12">
+        <StackPanel VerticalAlignment="Center" Spacing="14" HorizontalAlignment="Center">
+            <Canvas Width="48" Height="48" HorizontalAlignment="Center">
+                <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.4"
+                      Data="M 24 4.5 L 43.5 24 L 24 43.5 L 4.5 24 Z" />
+                <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.4" Opacity="0.55"
+                      Data="M 24 12 L 36 24 L 24 36 L 12 24 Z" />
+                <Ellipse Canvas.Left="21" Canvas.Top="21" Width="6" Height="6"
+                         Fill="{DynamicResource ConceptGold500Brush}" />
+            </Canvas>
+            <TextBlock Text="ANNO 117" Classes="t-eyebrow" FontSize="11" HorizontalAlignment="Center" />
             <TextBlock Text="Anno 117 Map Editor"
-                       FontSize="28" FontWeight="SemiBold" />
+                       Classes="t-display" FontSize="26"
+                       Foreground="{DynamicResource ConceptGold300Brush}"
+                       HorizontalAlignment="Center" />
             <TextBlock Text="Community Map Editor — for Anno 117 (Pax Romana)"
-                       Opacity="0.8" />
+                       Classes="t-mute" FontSize="11" HorizontalAlignment="Center" />
+            <Border Classes="divider-ornate" Width="220" />
             <Border BorderThickness="1" CornerRadius="6"
-                    BorderBrush="{DynamicResource SystemAccentColor}"
-                    Padding="16">
-                <TextBlock TextWrapping="Wrap">
+                    BorderBrush="{DynamicResource ConceptBorderBrush}"
+                    Background="{DynamicResource ConceptInk950Brush}"
+                    Padding="16" MaxWidth="500">
+                <TextBlock TextWrapping="Wrap" FontSize="12"
+                           Foreground="{DynamicResource ConceptTextDimBrush}">
                     Migration WPF → Avalonia en cours.
                     Cette fenêtre est temporaire : elle valide que la chaîne de build
                     cross-platform fonctionne. Les vraies fenêtres seront portées une à une.
@@ -21,6 +37,7 @@
             </Border>
         </StackPanel>
         <TextBlock Grid.Row="1" Text="net10.0 · Avalonia 11"
-                   HorizontalAlignment="Right" Opacity="0.5" />
+                   HorizontalAlignment="Right"
+                   Foreground="{DynamicResource ConceptTextMuteBrush}" FontSize="10" />
     </Grid>
 </Window>
