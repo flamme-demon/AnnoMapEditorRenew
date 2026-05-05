@@ -1438,6 +1438,47 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             Close();
         }
 
+        // ------------------- Biome / Map tabs (concept) -------------------
+        // Pour cette première itération, ces handlers se contentent de
+        // refléter visuellement la sélection (titre du panneau Place Islands +
+        // badge difficulté + StatusBar). Le câblage à la session/template
+        // active dans DataManager viendra avec le ViewModel dédié.
+
+        private void OnBiomeSelected(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not RadioButton rb || rb.IsChecked != true) return;
+            string biomeId = rb.Tag as string ?? "latium";
+            string biomeLabel = biomeId switch
+            {
+                "albion"  => "ALBION",
+                "desert"  => "DÉSERT",
+                "nordic"  => "NORDIQUE",
+                _         => "LATIUM",
+            };
+            var title = this.FindControl<TextBlock>("PlaceIslandsBiomeTitle");
+            if (title is not null) title.Text = biomeLabel;
+
+            if (_statusBar is not null)
+                _statusBar.Text = $"Biome actif : {biomeLabel}";
+        }
+
+        private void OnMapTabSelected(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not RadioButton rb || rb.IsChecked != true) return;
+            int idx = int.TryParse(rb.Tag as string, out int i) ? i : 0;
+            string diffLabel = idx switch
+            {
+                1 => "NORMAL",
+                2 => "DIFFICILE",
+                _ => "FACILE",
+            };
+            var label = this.FindControl<TextBlock>("DifficultyBadgeLabel");
+            if (label is not null) label.Text = diffLabel;
+
+            if (_statusBar is not null)
+                _statusBar.Text = $"Carte {idx + 1} · {diffLabel}";
+        }
+
         // ------------------- Elements TreeView -------------------
 
         private void RebuildElementsTree()

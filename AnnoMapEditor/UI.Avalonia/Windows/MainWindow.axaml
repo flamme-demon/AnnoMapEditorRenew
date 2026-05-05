@@ -108,8 +108,10 @@
                 <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto" VerticalAlignment="Center">
 
                     <!-- Biomes (RadioButton.biome-tab) -->
-                    <RadioButton Grid.Column="0" Classes="biome-tab" GroupName="Biome"
-                                 IsChecked="True" Margin="0,0,8,0">
+                    <RadioButton Grid.Column="0" x:Name="LatiumTab" Tag="latium"
+                                 Classes="biome-tab" GroupName="Biome"
+                                 IsChecked="True" IsCheckedChanged="OnBiomeSelected"
+                                 Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <!-- Glyphe Latium (losange/diamant) -->
                             <Canvas Width="14" Height="14" VerticalAlignment="Center">
@@ -128,7 +130,10 @@
                             </Border>
                         </StackPanel>
                     </RadioButton>
-                    <RadioButton Grid.Column="1" Classes="biome-tab" GroupName="Biome" Margin="0,0,8,0">
+                    <RadioButton Grid.Column="1" x:Name="AlbionTab" Tag="albion"
+                                 Classes="biome-tab" GroupName="Biome"
+                                 IsCheckedChanged="OnBiomeSelected"
+                                 Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <!-- Glyphe Albion (forme abstraite trèfle) -->
                             <Canvas Width="14" Height="14" VerticalAlignment="Center">
@@ -172,19 +177,24 @@
                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6"
                                 VerticalAlignment="Center" HorizontalAlignment="Left">
                         <TextBlock Text="CARTE" Classes="t-eyebrow" FontSize="9" VerticalAlignment="Center" />
-                        <RadioButton Classes="map-tab" GroupName="Map" IsChecked="True" Content="1" />
-                        <RadioButton Classes="map-tab" GroupName="Map" Content="2" />
-                        <RadioButton Classes="map-tab" GroupName="Map" Content="3" />
+                        <RadioButton x:Name="MapTab1" Tag="0" Classes="map-tab" GroupName="Map"
+                                     IsChecked="True" IsCheckedChanged="OnMapTabSelected" Content="1" />
+                        <RadioButton x:Name="MapTab2" Tag="1" Classes="map-tab" GroupName="Map"
+                                     IsCheckedChanged="OnMapTabSelected" Content="2" />
+                        <RadioButton x:Name="MapTab3" Tag="2" Classes="map-tab" GroupName="Map"
+                                     IsCheckedChanged="OnMapTabSelected" Content="3" />
                     </StackPanel>
 
                     <!-- Difficulty badge à droite (Editor.jsx 557-575) -->
                     <TextBlock Grid.Column="6" Text="DIFFICULTÉ" Classes="t-eyebrow"
                                FontSize="9" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <Border Grid.Column="7" Padding="12,4" CornerRadius="3"
+                    <Border Grid.Column="7" x:Name="DifficultyBadge"
+                            Padding="12,4" CornerRadius="3"
                             Background="#26C8A96A"
                             BorderBrush="{DynamicResource ConceptGold700Brush}"
                             BorderThickness="1">
-                        <TextBlock Text="NORMAL" Foreground="{DynamicResource ConceptGold300Brush}"
+                        <TextBlock x:Name="DifficultyBadgeLabel" Text="NORMAL"
+                                   Foreground="{DynamicResource ConceptGold300Brush}"
                                    FontSize="11" LetterSpacing="0.6" />
                     </Border>
                 </Grid>
@@ -513,7 +523,8 @@
                                     <Ellipse Canvas.Left="8.1" Canvas.Top="8.1" Width="1.8" Height="1.8"
                                              Fill="{DynamicResource ConceptGold400Brush}" />
                                 </Canvas>
-                                <TextBlock Text="LATIUM" Classes="t-display"
+                                <TextBlock x:Name="PlaceIslandsBiomeTitle" Text="LATIUM"
+                                           Classes="t-display"
                                            FontSize="14" Foreground="{DynamicResource ConceptGold300Brush}"
                                            LetterSpacing="2" />
                             </StackPanel>
