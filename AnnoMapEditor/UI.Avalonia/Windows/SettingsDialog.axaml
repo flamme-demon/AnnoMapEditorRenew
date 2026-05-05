@@ -47,25 +47,15 @@
                 <StackPanel Spacing="10">
                     <TextBlock Text="APPARENCE" Classes="t-eyebrow" />
 
-                    <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,10,Auto">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Langue"
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Grid.Column="0" Text="Langue"
                                    VerticalAlignment="Center"
                                    Foreground="{DynamicResource ConceptTextBrush}" />
-                        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="LanguageCombo"
+                        <ComboBox Grid.Column="1" x:Name="LanguageCombo"
                                   Classes="input" HorizontalAlignment="Stretch"
                                   SelectionChanged="OnLanguageChanged">
                             <ComboBoxItem Content="English"  Tag="en" />
                             <ComboBoxItem Content="Français" Tag="fr" />
-                        </ComboBox>
-
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Thème"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ConceptTextBrush}" />
-                        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="ThemeCombo"
-                                  Classes="input" HorizontalAlignment="Stretch"
-                                  SelectionChanged="OnThemeChanged">
-                            <ComboBoxItem Content="Sombre (concept)" Tag="Dark" />
-                            <ComboBoxItem Content="Clair (legacy)"   Tag="Light" />
                         </ComboBox>
                     </Grid>
                 </StackPanel>

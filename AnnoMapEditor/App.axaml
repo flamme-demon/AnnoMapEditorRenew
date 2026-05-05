@@ -733,7 +733,11 @@
         </Style>
 
         <!-- ── BUTTON.btn (base + .primary / .secondary / .ghost / .sm / .lg / .icon / .block)
-             Portage de components.css `.btn`+ variants ── -->
+             Portage de components.css `.btn`+ variants.
+             Template custom : Border#PART_Border bind Background/BorderBrush/CornerRadius
+             du Button. Sans ça, le Template Fluent par défaut écrase nos couleurs au
+             moment d'appliquer les states (notamment le tour subtle des btn-secondary
+             qu'on perdait à l'affichage). ── -->
         <Style Selector="Button.btn">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
@@ -747,6 +751,23 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Padding="{TemplateBinding Padding}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
         </Style>
         <Style Selector="Button.btn.primary">
             <Setter Property="Foreground" Value="#fff5e8" />
@@ -758,7 +779,7 @@
                 </LinearGradientBrush>
             </Setter>
         </Style>
-        <Style Selector="Button.btn.primary:pointerover /template/ ContentPresenter">
+        <Style Selector="Button.btn.primary:pointerover /template/ Border#PART_Border">
             <Setter Property="Background">
                 <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
                     <GradientStop Offset="0.0" Color="{StaticResource ConceptWine500}" />
@@ -766,7 +787,7 @@
                 </LinearGradientBrush>
             </Setter>
         </Style>
-        <Style Selector="Button.btn.primary:disabled /template/ ContentPresenter">
+        <Style Selector="Button.btn.primary:disabled /template/ Border#PART_Border">
             <Setter Property="Opacity" Value="0.4" />
         </Style>
         <Style Selector="Button.btn.secondary">
@@ -778,7 +799,7 @@
                 </LinearGradientBrush>
             </Setter>
         </Style>
-        <Style Selector="Button.btn.secondary:pointerover /template/ ContentPresenter">
+        <Style Selector="Button.btn.secondary:pointerover /template/ Border#PART_Border">
             <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderStrongBrush}" />
             <Setter Property="Background">
                 <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
@@ -791,7 +812,7 @@
             <Setter Property="Foreground" Value="{DynamicResource ConceptGold400Brush}" />
             <Setter Property="Padding" Value="14,8" />
         </Style>
-        <Style Selector="Button.btn.ghost:pointerover /template/ ContentPresenter">
+        <Style Selector="Button.btn.ghost:pointerover /template/ Border#PART_Border">
             <Setter Property="Background" Value="#15c8a96a" />
             <Setter Property="BorderBrush" Value="#33c8a96a" />
         </Style>
@@ -890,7 +911,9 @@
             <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
         </Style>
 
-        <!-- ── place-btn (Editor.jsx PlaceBtn 215-234) — boutons rangée Place Islands ── -->
+        <!-- ── place-btn (Editor.jsx PlaceBtn 215-234) — boutons rangée Place Islands.
+             Même Template que Button.btn (Border#PART_Border) pour que les bordures
+             et fonds restent visibles. ── -->
         <Style Selector="Button.place-btn">
             <Setter Property="Height" Value="28" />
             <Setter Property="Padding" Value="6,0" />
@@ -909,6 +932,22 @@
                     <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
                     <GradientStop Offset="1.0" Color="{StaticResource ConceptInk800}" />
                 </LinearGradientBrush>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Padding="{TemplateBinding Padding}" />
+                    </Border>
+                </ControlTemplate>
             </Setter>
         </Style>
         <Style Selector="Button.place-btn.filled">

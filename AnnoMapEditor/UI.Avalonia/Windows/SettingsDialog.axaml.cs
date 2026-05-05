@@ -32,7 +32,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 if (gamePath != null) gamePath.Text = Settings.Instance.GamePath ?? "";
 
                 SyncLanguage();
-                SyncTheme();
             }
             finally
             {
@@ -50,13 +49,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             combo.SelectedIndex = current == "fr" ? 1 : 0;
         }
 
-        private void SyncTheme()
-        {
-            var combo = this.FindControl<ComboBox>("ThemeCombo");
-            if (combo is null) return;
-            string current = App.CurrentThemeVariant;
-            combo.SelectedIndex = current == "Light" ? 1 : 0;
-        }
 
         private void OnAutoStartToggled(object? sender, RoutedEventArgs e)
         {
@@ -78,20 +70,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (sender is not ComboBox combo) return;
             if (combo.SelectedItem is ComboBoxItem item && item.Tag is string lang)
                 Localizer.Current.Language = lang;
-        }
-
-        private void OnThemeChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (sender is not ComboBox combo) return;
-            if (combo.SelectedItem is not ComboBoxItem item) return;
-            if (item.Tag is not string variant) return;
-
-            // ToggleTheme bascule l'état actuel ; on ne l'appelle que si la cible
-            // diffère pour éviter un double switch quand le user resélectionne
-            // l'item courant.
-            if (variant != App.CurrentThemeVariant)
-                App.ToggleTheme();
         }
 
         private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();
