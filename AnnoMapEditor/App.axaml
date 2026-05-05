@@ -980,7 +980,11 @@
             </Style.Resources>
         </Style>
 
-        <!-- ── TextBox.input (components.css .input) ── -->
+        <!-- ── TextBox.input (components.css .input).
+             `MinWidth="0"` + `HorizontalAlignment="Stretch"` : sans ça, le TextBox
+             Fluent garde sa MinWidth implicite (240+) quand le contenu est long,
+             ce qui le fait dépasser le parent (cas observé sur le path Steam Proton
+             dans SettingsDialog). ── -->
         <Style Selector="TextBox.input">
             <Setter Property="Background" Value="{DynamicResource ConceptInk950Brush}" />
             <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
@@ -992,6 +996,8 @@
             <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
             <Setter Property="CaretBrush" Value="{DynamicResource ConceptGold500Brush}" />
             <Setter Property="SelectionBrush" Value="{DynamicResource ConceptWine700Brush}" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
         <Style Selector="TextBox.input:pointerover /template/ Border#PART_BorderElement">
             <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderStrongBrush}" />
