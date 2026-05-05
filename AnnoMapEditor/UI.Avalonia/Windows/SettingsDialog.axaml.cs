@@ -36,6 +36,15 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                     gamePath.Text = Settings.Instance.GamePath ?? "";
                     gamePath.TextChanged += OnGamePathChanged;
                 }
+
+                // Mod install location : 2 RadioButton mutex (Documents par
+                // défaut). On coche celui qui correspond à la valeur persistée.
+                var modLocDocuments  = this.FindControl<RadioButton>("ModLocDocuments");
+                var modLocGameFolder = this.FindControl<RadioButton>("ModLocGameFolder");
+                bool useDocuments = Settings.Instance.ModInstallLocation != "GameFolder";
+                if (modLocDocuments  != null) modLocDocuments.IsChecked  = useDocuments;
+                if (modLocGameFolder != null) modLocGameFolder.IsChecked = !useDocuments;
+                UpdateModsPathPreview();
             }
             finally
             {
@@ -57,6 +66,23 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (_suppressEvents) return;
             if (sender is TextBox tb)
                 Settings.Instance.GamePath = string.IsNullOrWhiteSpace(tb.Text) ? null : tb.Text;
+            UpdateModsPathPreview();
+        }
+
+        private void OnModLocationChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_suppressEvents) return;
+            if (sender is not RadioButton rb || rb.IsChecked != true) return;
+            string loc = rb.Tag as string ?? "Documents";
+            Settings.Instance.ModInstallLocation = loc;
+            UpdateModsPathPreview();
+        }
+
+        private void UpdateModsPathPreview()
+        {
+            var preview = this.FindControl<TextBlock>("ModsPathPreview");
+            if (preview is null) return;
+            preview.Text = Settings.Instance.ResolveModsPath() ?? "—";
         }
 
         private async void OnBrowseClicked(object? sender, RoutedEventArgs e)

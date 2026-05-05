@@ -22,6 +22,12 @@
   "settings.browse": "Parcourir…",
   "settings.close": "Fermer",
   "settings.live_save": "Les changements sont enregistrés en direct.",
+  "settings.mods": "MODS",
+  "settings.mods_help": "Anno 117 lit les mods dans deux emplacements. Choisis où l'éditeur écrit tes exports.",
+  "settings.mods_documents": "Dossier Documents",
+  "settings.mods_documents_help": "Recommandé. Toujours writable, ignore les protections Steam Proton / Ubisoft Connect.",
+  "settings.mods_gamefolder": "Dossier du jeu",
+  "settings.mods_gamefolder_help": "Plus pratique pour partager une install — souvent read-only sous Steam Proton.",
 
   "header.toggle_language": "Changer de langue (FR / EN)",
   "header.settings": "Paramètres",

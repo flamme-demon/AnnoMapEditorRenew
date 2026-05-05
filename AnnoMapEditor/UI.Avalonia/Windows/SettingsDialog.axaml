@@ -3,7 +3,7 @@
         xmlns:l="using:AnnoMapEditor.Utilities"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.SettingsDialog"
         Title="{l:L Key=settings.title}"
-        Width="520" Height="440"
+        Width="520" Height="640"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="{DynamicResource ConceptInk900Brush}"
@@ -45,6 +45,51 @@
                                    FontSize="11" />
                     </StackPanel>
                 </CheckBox>
+            </StackPanel>
+
+            <Border Classes="divider-ornate" />
+
+            <!-- ── Mods ── -->
+            <StackPanel Spacing="10">
+                <TextBlock Text="{l:L Key=settings.mods}" Classes="t-eyebrow" />
+                <TextBlock Text="{l:L Key=settings.mods_help}"
+                           Foreground="{DynamicResource ConceptTextDimBrush}"
+                           FontSize="11" TextWrapping="Wrap" />
+                <StackPanel Orientation="Vertical" Spacing="4">
+                    <RadioButton x:Name="ModLocDocuments" GroupName="ModLoc"
+                                 Tag="Documents"
+                                 IsCheckedChanged="OnModLocationChanged"
+                                 Foreground="{DynamicResource ConceptTextBrush}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{l:L Key=settings.mods_documents}" FontSize="13" />
+                            <TextBlock Text="{l:L Key=settings.mods_documents_help}"
+                                       Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                       FontSize="10" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="ModLocGameFolder" GroupName="ModLoc"
+                                 Tag="GameFolder"
+                                 IsCheckedChanged="OnModLocationChanged"
+                                 Foreground="{DynamicResource ConceptTextBrush}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{l:L Key=settings.mods_gamefolder}" FontSize="13" />
+                            <TextBlock Text="{l:L Key=settings.mods_gamefolder_help}"
+                                       Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                       FontSize="10" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+                <!-- Path effectif résolu, à titre indicatif -->
+                <Border Background="{DynamicResource ConceptInk950Brush}"
+                        BorderBrush="{DynamicResource ConceptBorderBrush}"
+                        BorderThickness="1" CornerRadius="4"
+                        Padding="10,6">
+                    <TextBlock x:Name="ModsPathPreview"
+                               TextWrapping="Wrap"
+                               FontFamily="{StaticResource MonoFont}"
+                               FontSize="10"
+                               Foreground="{DynamicResource ConceptTextDimBrush}" />
+                </Border>
             </StackPanel>
 
             <Border Classes="divider-ornate" />

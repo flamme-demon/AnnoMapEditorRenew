@@ -23,6 +23,13 @@ namespace AnnoMapEditor
         /// plus tard, depuis le panneau Settings de MainWindow.</summary>
         public bool AutoStart { get; set; } = true;
 
+        /// <summary>Où l'utilisateur veut que ses mods soient écrits.
+        /// "GameFolder" = `<GamePath>/mods/` (dossier du jeu, lu en priorité
+        /// par Anno 117 mais souvent read-only sous Steam Proton).
+        /// "Documents" = `<UserDocuments>/Anno 117 - Pax Romana/mods/` (toujours
+        /// writable, recommandé par défaut). Default = Documents.</summary>
+        public string ModInstallLocation { get; set; } = "Documents";
+
         /// <summary>CSV of DLC filter ids the user has switched OFF in the maps panel.</summary>
         public string? DisabledDlcFilters { get; set; }
 
