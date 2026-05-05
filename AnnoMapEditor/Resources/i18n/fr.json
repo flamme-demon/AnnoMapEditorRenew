@@ -15,6 +15,7 @@
   "start.continue": "Continuer →",
   "start.autostart": "Démarrage automatique",
   "start.autostart_help": "Saute cet écran si le jeu est détecté",
+  "settings.title": "Paramètres",
 
   "main.save_mod": "💾 Sauvegarder en mod",
   "main.back_to_start": "← Changer de jeu",

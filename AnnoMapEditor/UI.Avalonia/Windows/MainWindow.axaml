@@ -93,6 +93,11 @@
                         <Button Classes="btn ghost sm icon" Content="🖼"
                                 ToolTip.Tip="Exporter PNG" />
                         <Button Classes="btn primary sm" Content="⇡  Exporter le mod" />
+                        <Border Width="1" Height="18" Margin="2,0"
+                                Background="{DynamicResource ConceptBorderBrush}" />
+                        <Button Classes="btn ghost sm icon" Content="⚙"
+                                ToolTip.Tip="Paramètres"
+                                Click="OnSettingsClicked" />
                     </StackPanel>
                 </Grid>
             </Border>

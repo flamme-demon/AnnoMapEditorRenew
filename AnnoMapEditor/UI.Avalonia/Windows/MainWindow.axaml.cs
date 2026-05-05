@@ -1438,6 +1438,12 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             Close();
         }
 
+        private async void OnSettingsClicked(object? sender, RoutedEventArgs e)
+        {
+            var dialog = new SettingsDialog();
+            await dialog.ShowDialog(this);
+        }
+
         // ------------------- Biome / Map tabs (concept) -------------------
         // Pour cette première itération, ces handlers se contentent de
         // refléter visuellement la sélection (titre du panneau Place Islands +

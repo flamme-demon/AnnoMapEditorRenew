@@ -1,0 +1,114 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:AnnoMapEditor.Utilities"
+        x:Class="AnnoMapEditor.UI.Avalonia.Windows.SettingsDialog"
+        Title="{l:L Key=settings.title}"
+        Width="520" Height="540"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource ConceptInk900Brush}"
+        Foreground="{DynamicResource ConceptTextBrush}">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="0">
+
+        <!-- Header (concept modale style) -->
+        <Border Grid.Row="0" Padding="24,20"
+                BorderBrush="{DynamicResource ConceptBorderBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <TextBlock Text="ATELIER" Classes="t-eyebrow" HorizontalAlignment="Center" />
+                <TextBlock Text="{l:L Key=settings.title}" Classes="modal-title" />
+                <Border Classes="divider-ornate" Width="160" Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" Padding="32,20">
+            <StackPanel Spacing="22">
+
+                <!-- ── Démarrage ── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="DÉMARRAGE" Classes="t-eyebrow" />
+                    <CheckBox x:Name="AutoStartCheckBox"
+                              IsCheckedChanged="OnAutoStartToggled"
+                              Foreground="{DynamicResource ConceptTextBrush}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{l:L Key=start.autostart}" FontSize="13" />
+                            <TextBlock Text="{l:L Key=start.autostart_help}"
+                                       Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                       FontSize="11" />
+                        </StackPanel>
+                    </CheckBox>
+                </StackPanel>
+
+                <Border Classes="divider-ornate" />
+
+                <!-- ── Apparence ── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="APPARENCE" Classes="t-eyebrow" />
+
+                    <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,10,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Langue"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ConceptTextBrush}" />
+                        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="LanguageCombo"
+                                  Classes="input" HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnLanguageChanged">
+                            <ComboBoxItem Content="English"  Tag="en" />
+                            <ComboBoxItem Content="Français" Tag="fr" />
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Thème"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ConceptTextBrush}" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="ThemeCombo"
+                                  Classes="input" HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnThemeChanged">
+                            <ComboBoxItem Content="Sombre (concept)" Tag="Dark" />
+                            <ComboBoxItem Content="Clair (legacy)"   Tag="Light" />
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+
+                <Border Classes="divider-ornate" />
+
+                <!-- ── Avancé ── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="AVANCÉ" Classes="t-eyebrow" />
+
+                    <CheckBox x:Name="ExpertModeCheckBox"
+                              IsCheckedChanged="OnExpertModeToggled"
+                              Foreground="{DynamicResource ConceptTextBrush}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Mode expert" FontSize="13" />
+                            <TextBlock Text="Active les overrides de chemins (data, mods)."
+                                       Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                       FontSize="11" />
+                        </StackPanel>
+                    </CheckBox>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="DOSSIER DU JEU" Classes="t-eyebrow" />
+                        <TextBox x:Name="GamePathBox" Classes="input" IsReadOnly="True" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Padding="24,16"
+                Background="{DynamicResource ConceptInk950Brush}"
+                BorderBrush="{DynamicResource ConceptBorderBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Les changements sont enregistrés en direct."
+                           Foreground="{DynamicResource ConceptTextMuteBrush}"
+                           FontSize="11" FontStyle="Italic"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="btn primary"
+                        Content="Fermer" Click="OnCloseClicked" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

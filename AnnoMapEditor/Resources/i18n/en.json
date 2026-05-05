@@ -15,6 +15,7 @@
   "start.continue": "Continue →",
   "start.autostart": "Auto-start",
   "start.autostart_help": "Skip this screen when the game is detected",
+  "settings.title": "Settings",
 
   "main.save_mod": "💾 Save as mod",
   "main.back_to_start": "← Change game",
