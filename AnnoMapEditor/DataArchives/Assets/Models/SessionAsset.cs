@@ -5,10 +5,11 @@ using AnnoMapEditor.Games;
 
 namespace AnnoMapEditor.DataArchives.Assets.Models
 {
-    // Anno 117 ships two sessions: Latium (Roman) and Albion (Celtic).
-    // Anno 1800 templates ("SessionModerate", "SessionSouthAmerica",
-    // "SessionArctic", "SessionDLC*") sont retirés.
-    [AssetTemplate("SessionLatium", "SessionAlbion")]
+    // Anno 117 garde le template name `SessionModerate` (héritage du moteur
+    // Anno 1800) — les sessions Latium (GUID 3245) et Albion (GUID 6627) sont
+    // toutes deux émises avec ce template dans assets.xml. La distinction
+    // Latium / Albion se fait par GUID, pas par template.
+    [AssetTemplate("SessionModerate")]
     public class SessionAsset : StandardAsset
     {
         public const string TEMPLATE_NAME = "Session";
