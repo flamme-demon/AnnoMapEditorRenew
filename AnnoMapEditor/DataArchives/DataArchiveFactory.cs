@@ -42,7 +42,7 @@ namespace AnnoMapEditor.DataArchives
                 _logger.LogWarning(ex.Message);
             }
 
-            throw new Exception($"Could not find valid Anno 1800 data at '{dataPath}'.");
+            throw new Exception($"Could not find valid Anno 117 data at '{dataPath}'.");
         }
 
         public IDataArchive CreateRdaDataArchive(string dataPath)

@@ -15,7 +15,7 @@ namespace AnnoMapEditor.DataArchives.Assets.Models
         // actual island; everything else is the surrounding ocean buffer the engine draws
         // out of the playable area. The editor uses this to render fixed islands at their
         // real visual size instead of the inflated terrain bbox. Null when the asset
-        // didn't ship with the field (older Anno 1800 .a7m files).
+        // didn't ship with the field (older .a7m files).
         public int[]? ActiveMapRect { get; init; }
 
         public Bitmap? Thumbnail { get; init; }

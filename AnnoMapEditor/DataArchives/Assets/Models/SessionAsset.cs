@@ -5,7 +5,10 @@ using AnnoMapEditor.Games;
 
 namespace AnnoMapEditor.DataArchives.Assets.Models
 {
-    [AssetTemplate("SessionModerate", "SessionSouthAmerica", "SessionArctic")]
+    // Anno 117 ships two sessions: Latium (Roman) and Albion (Celtic).
+    // Anno 1800 templates ("SessionModerate", "SessionSouthAmerica",
+    // "SessionArctic", "SessionDLC*") sont retirés.
+    [AssetTemplate("SessionLatium", "SessionAlbion")]
     public class SessionAsset : StandardAsset
     {
         public const string TEMPLATE_NAME = "Session";

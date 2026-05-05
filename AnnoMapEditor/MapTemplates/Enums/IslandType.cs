@@ -63,53 +63,33 @@ namespace AnnoMapEditor.MapTemplates.Enums
 
             return type;
         }
+        // Anno 117 conventions de nommage (à compléter au fil des découvertes
+        // sur les .a7m vanilla DLC1 et les mods Taludas-style) :
+        //   - décoratives  → fragments  "_d_", "_dst_", "_battlesite_", "_encounter_"
+        //   - volcaniques  → "volcanic" / "vesuv" / l'asset Vesuvius DLC1
+        //                    "roman_dlc01_island_continental_01"
+        //   - 3rd party / pirates : conventions à identifier (pas de mapping
+        //                            hardcodé pour l'instant — anciens noms 1800
+        //                            "moderate_3rdparty*" / "colony01_3rdparty*" virés).
         public static IslandType FromIslandFileName(string fileName)
         {
-            switch (fileName)
-            {
-                case "moderate_3rdparty02_01":
-                case "colony01_3rdparty05_01":
-                case "moderate_3rdparty06_01":
-                case "moderate_3rdparty07_01":
-                case "moderate_3rdparty08_01":
-                case "colony03_3rdparty09_01":
-                case "colony03_d_18":
-                    return ThirdParty;
-                case "moderate_3rdparty03_01":
-                case "colony01_3rdparty04_01":
-                    return PirateIsland;
-                // The unique DLC1 "continental" asset is the Vesuvius island — visually a
-                // volcano in-game, so it makes sense to label it Volcanic instead of Normal.
-                case "roman_dlc01_island_continental_01":
-                    return VolcanicIsland;
+            if (fileName == "roman_dlc01_island_continental_01")
+                return VolcanicIsland;
 
-                default:
-                    if (fileName.Contains("_d_") || fileName.Contains("_dst_") || fileName.Contains("_battlesite_")|| fileName.Contains("_encounter_")) return Decoration;
-                    // Future-proofing: if Anno ever ships explicit "volcanic" / "vesuv" assets,
-                    // we surface them with the dedicated label and red colour automatically.
-                    if (fileName.Contains("volcanic", System.StringComparison.OrdinalIgnoreCase)
-                        || fileName.Contains("vesuv", System.StringComparison.OrdinalIgnoreCase))
-                        return VolcanicIsland;
-                    return Normal;
-            }
+            if (fileName.Contains("_d_") || fileName.Contains("_dst_")
+                || fileName.Contains("_battlesite_") || fileName.Contains("_encounter_"))
+                return Decoration;
+
+            if (fileName.Contains("volcanic", System.StringComparison.OrdinalIgnoreCase)
+                || fileName.Contains("vesuv", System.StringComparison.OrdinalIgnoreCase))
+                return VolcanicIsland;
+
+            return Normal;
         }
 
-        public static string? DefaultIslandLabelFromFileName(string fileName)
-        {
-            return fileName switch
-            {
-                "moderate_3rdparty02_01" => "Sir Archibald Blake",
-                "colony01_3rdparty05_01" => "Isabel Sarmento",
-                "moderate_3rdparty06_01" => "Old Nate",
-                "colony03_d_18" => "Old Nate (Arctic)",
-                "moderate_3rdparty07_01" => "Eli Bleakworth",
-                "moderate_3rdparty08_01" => "Madame Kahina",
-                "colony03_3rdparty09_01" => "Qumaq",
-                "moderate_3rdparty03_01" => "Anne Harlow",
-                "colony01_3rdparty04_01" => "Jean La Fortune",
-                _ => null,
-            };
-        }
+        // Plus de labels hardcodés (les noms NPCs 1800 ont été retirés).
+        // Le label vient de l'asset XML du jeu lui-même.
+        public static string? DefaultIslandLabelFromFileName(string fileName) => null;
 
 
         public override string ToString() => Name;
