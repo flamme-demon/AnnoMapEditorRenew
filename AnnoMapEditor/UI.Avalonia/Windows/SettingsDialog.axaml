@@ -22,10 +22,10 @@
             </StackPanel>
         </Border>
 
-        <!-- Body -->
-        <ScrollViewer Grid.Row="1" Padding="32,20"
-                      VerticalScrollBarVisibility="Visible"
-                      AllowAutoHide="False">
+        <!-- Body : ScrollViewer simple, le scrollbar n'apparaît que si le contenu
+             dépasse la hauteur de la Window. Le style global ScrollBar (App.axaml)
+             override les couleurs Fluent pour rester dans la charte concept. -->
+        <ScrollViewer Grid.Row="1" Padding="32,20">
             <StackPanel Spacing="22">
 
                 <!-- ── Démarrage ── -->

@@ -960,25 +960,24 @@
             </Setter>
         </Style>
 
-        <!-- ── ScrollBar concept : fine bar ink-950, thumb ink-600, hover gold-700 ── -->
+        <!-- ── ScrollBar concept : on override les resources Fluent par leur clé
+             plutôt que de remplacer le Template (qui cassait l'interaction wheel). ── -->
         <Style Selector="ScrollBar">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb">
-            <Setter Property="Background" Value="{DynamicResource ConceptInk600Brush}" />
-            <Setter Property="CornerRadius" Value="3" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb:pointerover">
-            <Setter Property="Background" Value="{DynamicResource ConceptGold700Brush}" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb:pressed">
-            <Setter Property="Background" Value="{DynamicResource ConceptGold500Brush}" />
-        </Style>
-        <Style Selector="ScrollBar:vertical">
-            <Setter Property="Width" Value="10" />
-        </Style>
-        <Style Selector="ScrollBar:horizontal">
-            <Setter Property="Height" Value="10" />
+            <Style.Resources>
+                <!-- Couleurs du Thumb (track de la barre) -->
+                <SolidColorBrush x:Key="ScrollBarThumbFill"            Color="#324466" />
+                <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8a7240" />
+                <SolidColorBrush x:Key="ScrollBarThumbFillPressed"     Color="#c8a96a" />
+                <SolidColorBrush x:Key="ScrollBarThumbFillDisabled"    Color="#243454" />
+
+                <!-- Couleurs du Track (rail de la barre) -->
+                <SolidColorBrush x:Key="ScrollBarTrackFill"            Color="Transparent" />
+                <SolidColorBrush x:Key="ScrollBarTrackFillPointerOver" Color="#1a2840" />
+                <SolidColorBrush x:Key="ScrollBarTrackFillPressed"     Color="#1a2840" />
+                <SolidColorBrush x:Key="ScrollBarTrackFillDisabled"    Color="Transparent" />
+                <SolidColorBrush x:Key="ScrollBarTrackStroke"          Color="Transparent" />
+                <SolidColorBrush x:Key="ScrollBarTrackStrokePointerOver" Color="Transparent" />
+            </Style.Resources>
         </Style>
 
         <!-- ── TextBox.input (components.css .input) ── -->
