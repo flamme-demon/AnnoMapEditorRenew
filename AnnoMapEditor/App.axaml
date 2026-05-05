@@ -921,6 +921,39 @@
             </Setter>
         </Style>
 
+        <!-- ── TextBox.input (components.css .input) ── -->
+        <Style Selector="TextBox.input">
+            <Setter Property="Background" Value="{DynamicResource ConceptInk950Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource ConceptWine700Brush}" />
+        </Style>
+        <Style Selector="TextBox.input:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderStrongBrush}" />
+        </Style>
+        <Style Selector="TextBox.input:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="Background" Value="{DynamicResource ConceptInk900Brush}" />
+        </Style>
+
+        <!-- ── ComboBox.input (style cohérent avec TextBox.input) ── -->
+        <Style Selector="ComboBox.input">
+            <Setter Property="Background" Value="{DynamicResource ConceptInk950Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
+        </Style>
+
         <!-- ── Modale (components.css .modal-backdrop / .modal / .modal-title) ── -->
         <Style Selector="Border.modal-backdrop">
             <Setter Property="Background" Value="#C70d1626" />

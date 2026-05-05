@@ -5,31 +5,76 @@
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.StartWindow"
         x:DataType="vm:StartWindowViewModel"
         Title="{l:L Key=app.title_setup}"
-        Width="720" Height="520"
-        WindowStartupLocation="CenterScreen">
+        Width="720" Height="560"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ConceptInk900Brush}"
+        Foreground="{DynamicResource ConceptTextBrush}">
 
-    <Grid RowDefinitions="Auto,*,Auto" Margin="32">
+    <!-- StartWindow alignée sur le concept "Anno Mod Creator" :
+         dark only (ink-900), Cinzel pour le titre, divider doré orné,
+         champs `TextBox.input`, boutons `btn secondary` / `btn primary`. -->
 
-        <StackPanel Grid.Row="0" Spacing="6">
-            <TextBlock Text="{l:L Key=app.tagline}" FontSize="28" FontWeight="SemiBold" />
-            <TextBlock Text="{l:L Key=app.tagline_sub}" Opacity="0.7" />
+    <Grid RowDefinitions="Auto,*,Auto" Margin="48,40,48,32">
+
+        <!-- ── Header (Logo + eyebrow + display title) ── -->
+        <StackPanel Grid.Row="0" Spacing="14" HorizontalAlignment="Center">
+            <Canvas Width="40" Height="40" HorizontalAlignment="Center">
+                <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.4"
+                      Data="M 20 3.75 L 36.25 20 L 20 36.25 L 3.75 20 Z" />
+                <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.4" Opacity="0.55"
+                      Data="M 20 10 L 30 20 L 20 30 L 10 20 Z" />
+                <Ellipse Canvas.Left="17.5" Canvas.Top="17.5" Width="5" Height="5"
+                         Fill="{DynamicResource ConceptGold500Brush}" />
+            </Canvas>
+
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <TextBlock Text="ANNO 117" Classes="t-eyebrow"
+                           FontSize="11" HorizontalAlignment="Center" />
+                <TextBlock Text="{l:L Key=app.tagline}"
+                           Classes="t-display"
+                           FontSize="26"
+                           Foreground="{DynamicResource ConceptGold300Brush}"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{l:L Key=app.tagline_sub}"
+                           Classes="t-mute"
+                           FontSize="11"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+
+            <Border Classes="divider-ornate" Width="220" />
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Spacing="18" VerticalAlignment="Center">
+        <!-- ── Body : path picker + status ── -->
+        <StackPanel Grid.Row="1" Spacing="16" VerticalAlignment="Center" Margin="0,32,0,0">
 
-            <Border BorderThickness="1" CornerRadius="6" Padding="16"
-                    BorderBrush="{DynamicResource SystemAccentColor}">
+            <!-- Card 1 : dossier d'installation -->
+            <Border Padding="20"
+                    CornerRadius="6"
+                    BorderBrush="{DynamicResource ConceptBorderBrush}"
+                    BorderThickness="1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                        <GradientStop Offset="0.0" Color="#9914213a" />
+                        <GradientStop Offset="1.0" Color="#990d1626" />
+                    </LinearGradientBrush>
+                </Border.Background>
                 <StackPanel Spacing="10">
-                    <TextBlock Text="{l:L Key=start.game_path}" FontWeight="SemiBold" />
+                    <TextBlock Text="DOSSIER DU JEU" Classes="t-eyebrow" />
+                    <TextBlock Text="{l:L Key=start.game_path}"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ConceptTextBrush}" />
                     <TextBlock Text="{l:L Key=start.game_path_help}"
-                               TextWrapping="Wrap" Opacity="0.7" FontSize="12" />
-                    <Grid ColumnDefinitions="*,Auto">
+                               TextWrapping="Wrap" FontSize="11"
+                               Foreground="{DynamicResource ConceptTextDimBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
                         <TextBox Grid.Column="0"
+                                 Classes="input"
                                  Text="{Binding GamePath, Mode=TwoWay}"
                                  Watermark="{l:L Key=start.game_path_watermark}"
                                  IsEnabled="{Binding !IsInitializing}"
                                  Margin="0,0,8,0" />
                         <Button Grid.Column="1"
+                                Classes="btn secondary"
                                 Content="{l:L Key=start.browse}"
                                 Click="OnBrowseClicked"
                                 IsEnabled="{Binding !IsInitializing}" />
@@ -37,32 +82,42 @@
                 </StackPanel>
             </Border>
 
-            <Border BorderThickness="1" CornerRadius="6" Padding="16"
-                    BorderBrush="{DynamicResource SystemBaseLowColor}"
+            <!-- Card 2 : status message (visible si non vide) -->
+            <Border Padding="16"
+                    CornerRadius="6"
+                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+                    BorderThickness="1"
+                    Background="{DynamicResource ConceptInk950Brush}"
                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <StackPanel Spacing="6">
-                    <TextBlock Text="{l:L Key=start.status}" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                    <TextBlock Text="ÉTAT" Classes="t-eyebrow" />
+                    <TextBlock Text="{Binding StatusMessage}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource ConceptGold300Brush}"
+                               FontSize="12" />
                 </StackPanel>
             </Border>
-
         </StackPanel>
 
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto">
-            <!-- ClipToBounds + TextTrimming guarantees the footer never pushes the action
-                 buttons off-screen, no matter how long the version string is. -->
+        <!-- ── Footer ── -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,16,0,0">
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
                         VerticalAlignment="Center" Margin="0,0,12,0" ClipToBounds="True">
-                <TextBlock Opacity="0.5" Text="{l:L Key=app.footer}"
+                <TextBlock Text="{l:L Key=app.footer}"
+                           Foreground="{DynamicResource ConceptTextMuteBrush}"
+                           FontSize="11"
                            TextTrimming="CharacterEllipsis" />
-                <TextBlock Opacity="0.7" FontWeight="SemiBold" x:Name="VersionLabel"
+                <TextBlock x:Name="VersionLabel"
+                           Foreground="{DynamicResource ConceptGold500Brush}"
+                           FontSize="11" FontWeight="SemiBold"
                            TextTrimming="CharacterEllipsis" />
             </StackPanel>
-            <ComboBox Grid.Column="1" x:Name="LanguageSelector" Margin="0,0,12,0"
-                      Width="120" SelectionChanged="OnLanguageChanged" />
-            <Button Grid.Column="2" Content="{l:L Key=start.quit}" Click="OnQuitClicked" Margin="0,0,12,0" />
-            <Button Grid.Column="3" Content="{l:L Key=start.continue}"
-                    Classes="accent"
+            <ComboBox Grid.Column="1" x:Name="LanguageSelector" Classes="input"
+                      Margin="0,0,12,0" Width="120" SelectionChanged="OnLanguageChanged" />
+            <Button Grid.Column="2" Classes="btn secondary"
+                    Content="{l:L Key=start.quit}" Click="OnQuitClicked" Margin="0,0,8,0" />
+            <Button Grid.Column="3" Classes="btn primary"
+                    Content="{l:L Key=start.continue}"
                     Click="OnContinueClicked"
                     IsEnabled="{Binding CanContinue}" />
         </Grid>
