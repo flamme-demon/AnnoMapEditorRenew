@@ -27,15 +27,14 @@
   </ItemGroup>
 
   <!--
-    Migration WPF→Avalonia en cours.
-    On exclut TOUT le code legacy par défaut, et on ré-inclut explicitement
-    les fichiers déjà portés vers Avalonia. Au fur et à mesure de la migration,
-    on ajoute les fichiers convertis dans le bloc "Compile Include" ci-dessous.
+    Migration WPF→Avalonia terminée. Le legacy `UI/` (WPF) a été supprimé sur
+    `anno117-rewrite`. On garde une liste blanche explicite des dossiers .cs
+    compilés pour éviter de remonter `UserSettings.Designer.cs` (dépend de
+    System.Configuration.ConfigurationManager non référencé) ou d'éventuels
+    fichiers de prototypage non terminés.
   -->
   <ItemGroup>
     <Compile Remove="**\*.cs" />
-    <None Include="UI\**\*.cs" />
-    <None Include="UI\**\*.xaml" />
   </ItemGroup>
 
   <ItemGroup Label="Avalonia-ready">
@@ -50,7 +49,6 @@
     <Compile Include="DataArchives\Assets\Models\**\*.cs" />
     <Compile Include="DataArchives\Assets\Deserialization\**\*.cs" />
     <Compile Include="DataArchives\Assets\Repositories\**\*.cs" />
-    <Compile Remove="DataArchives\Assets\Repositories\MapGroupRepository.cs" />
     <Compile Include="DataArchives\*.cs" />
     <Compile Include="Games\**\*.cs" />
   </ItemGroup>
