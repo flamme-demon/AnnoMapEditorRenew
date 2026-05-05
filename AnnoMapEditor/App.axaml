@@ -1,8 +1,796 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="AnnoMapEditor.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Material Icons font (Google, Apache 2.0). Embedded so the menu
+                 buttons render proper vector glyphs instead of emojis. The
+                 string after '#' is the font's internal Family Name. -->
+            <FontFamily x:Key="MaterialIcons">avares://AnnoMapEditor/Assets/fonts#Material Icons</FontFamily>
+
+            <!-- Concept fonts (mod-creator design): Cinzel for Roman display
+                 titles, Inter (already provided by Avalonia.Fonts.Inter) for body. -->
+            <FontFamily x:Key="DisplayFont">avares://AnnoMapEditor/Assets/fonts#Cinzel</FontFamily>
+            <FontFamily x:Key="BodyFont">Inter, $Default</FontFamily>
+
+            <!-- Concept palette: pale gold (filets, eyebrows, accents) and
+                 parchment-stone (map canvas surface). Independent of Light/Dark
+                 since they're decorative accents that read on both. -->
+            <Color x:Key="ConceptGold300">#E8D6A8</Color>
+            <Color x:Key="ConceptGold400">#D8BF83</Color>
+            <Color x:Key="ConceptGold500">#C8A96A</Color>
+            <Color x:Key="ConceptGold600">#A88A52</Color>
+            <Color x:Key="ConceptGold700">#8A7240</Color>
+
+            <SolidColorBrush x:Key="ConceptGold300Brush" Color="{StaticResource ConceptGold300}" />
+            <SolidColorBrush x:Key="ConceptGold400Brush" Color="{StaticResource ConceptGold400}" />
+            <SolidColorBrush x:Key="ConceptGold500Brush" Color="{StaticResource ConceptGold500}" />
+            <SolidColorBrush x:Key="ConceptGold600Brush" Color="{StaticResource ConceptGold600}" />
+            <SolidColorBrush x:Key="ConceptGold700Brush" Color="{StaticResource ConceptGold700}" />
+
+            <Color x:Key="ConceptStone100">#F0E8D8</Color>
+            <Color x:Key="ConceptStone200">#E0D4BE</Color>
+            <Color x:Key="ConceptStone300">#C8B89C</Color>
+
+            <SolidColorBrush x:Key="ConceptStone100Brush" Color="{StaticResource ConceptStone100}" />
+            <SolidColorBrush x:Key="ConceptStone200Brush" Color="{StaticResource ConceptStone200}" />
+            <SolidColorBrush x:Key="ConceptStone300Brush" Color="{StaticResource ConceptStone300}" />
+
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- LIGHT THEME (Roman parchment) — mirrors the :root[light]
+                     variables from annolayouts.de styles.css. CSS variable
+                     names use a CSS double-dash prefix; we drop it here for
+                     the Avalonia resource keys. -->
+
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="AnnoBgColor">#D4B89B</Color>
+                    <Color x:Key="AnnoBgLighterColor">#E0C5AB</Color>
+                    <Color x:Key="AnnoBgDarkerColor">#BFA385</Color>
+                    <Color x:Key="AnnoTextColor">#2C1B12</Color>
+                    <Color x:Key="AnnoTextMutedColor">#5A3F31</Color>
+                    <Color x:Key="AnnoAccentColor">#5F032E</Color>
+                    <Color x:Key="AnnoAccentLightColor">#85174A</Color>
+                    <Color x:Key="AnnoButtonBorderColor">#A48461</Color>
+                    <Color x:Key="AnnoButtonInsetColor">#E6D3BE</Color>
+                    <Color x:Key="AnnoTableHeaderColor">#5B423F</Color>
+                    <Color x:Key="AnnoTableBorderColor">#CCB093</Color>
+                    <Color x:Key="AnnoCardBgColor">#C7AE94</Color>
+                    <Color x:Key="AnnoMenuBgColor">#3E2A1B</Color>
+
+                    <SolidColorBrush x:Key="AnnoBgBrush"           Color="{StaticResource AnnoBgColor}" />
+                    <SolidColorBrush x:Key="AnnoBgLighterBrush"    Color="{StaticResource AnnoBgLighterColor}" />
+                    <SolidColorBrush x:Key="AnnoBgDarkerBrush"     Color="{StaticResource AnnoBgDarkerColor}" />
+                    <SolidColorBrush x:Key="AnnoTextBrush"         Color="{StaticResource AnnoTextColor}" />
+                    <SolidColorBrush x:Key="AnnoTextMutedBrush"    Color="{StaticResource AnnoTextMutedColor}" />
+                    <SolidColorBrush x:Key="AnnoAccentBrush"       Color="{StaticResource AnnoAccentColor}" />
+                    <SolidColorBrush x:Key="AnnoAccentLightBrush"  Color="{StaticResource AnnoAccentLightColor}" />
+                    <SolidColorBrush x:Key="AnnoButtonBorderBrush" Color="{StaticResource AnnoButtonBorderColor}" />
+                    <SolidColorBrush x:Key="AnnoButtonInsetBrush"  Color="{StaticResource AnnoButtonInsetColor}" />
+                    <SolidColorBrush x:Key="AnnoTableHeaderBrush"  Color="{StaticResource AnnoTableHeaderColor}" />
+                    <SolidColorBrush x:Key="AnnoTableBorderBrush"  Color="{StaticResource AnnoTableBorderColor}" />
+                    <SolidColorBrush x:Key="AnnoCardBgBrush"       Color="{StaticResource AnnoCardBgColor}" />
+                    <SolidColorBrush x:Key="AnnoMenuBgBrush"       Color="{StaticResource AnnoMenuBgColor}" />
+
+                    <!-- Radial body fill (window background): light parchment top → darker bottom -->
+                    <RadialGradientBrush x:Key="AnnoWindowGradient"
+                                         Center="50%,0%" GradientOrigin="50%,0%"
+                                         RadiusX="100%" RadiusY="100%">
+                        <GradientStop Offset="0.0" Color="#E6CDB4" />
+                        <GradientStop Offset="0.7" Color="#BFA385" />
+                    </RadialGradientBrush>
+                    <!-- Header bandeau: warm brown radial -->
+                    <RadialGradientBrush x:Key="AnnoHeaderGradient"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="60%" RadiusY="60%">
+                        <GradientStop Offset="0.0" Color="#5B423F" />
+                        <GradientStop Offset="0.6" Color="#2C1C1D" />
+                    </RadialGradientBrush>
+                    <!-- Button fill: bombé radial parchment -->
+                    <RadialGradientBrush x:Key="AnnoButtonBg"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="50%" RadiusY="50%">
+                        <GradientStop Offset="0.0" Color="#C8B7A4" />
+                        <GradientStop Offset="0.68" Color="#B59D83" />
+                    </RadialGradientBrush>
+                    <RadialGradientBrush x:Key="AnnoButtonBgHover"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="50%" RadiusY="50%">
+                        <GradientStop Offset="0.0" Color="#BDAA94" />
+                        <GradientStop Offset="0.68" Color="#A78F75" />
+                    </RadialGradientBrush>
+                    <!-- Active (selected) button: bordeaux radial -->
+                    <RadialGradientBrush x:Key="AnnoButtonBgActive"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="50%" RadiusY="50%">
+                        <GradientStop Offset="0.0" Color="#85174A" />
+                        <GradientStop Offset="0.7"  Color="#5F032E" />
+                    </RadialGradientBrush>
+                </ResourceDictionary>
+
+                <!-- DARK THEME (Roman navy night) -->
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="AnnoBgColor">#1A1B1F</Color>
+                    <Color x:Key="AnnoBgLighterColor">#262F44</Color>
+                    <Color x:Key="AnnoBgDarkerColor">#0E1320</Color>
+                    <Color x:Key="AnnoTextColor">#E3E2E6</Color>
+                    <Color x:Key="AnnoTextMutedColor">#9AA0AC</Color>
+                    <Color x:Key="AnnoAccentColor">#6B8CB9</Color>
+                    <Color x:Key="AnnoAccentLightColor">#8AA8D2</Color>
+                    <Color x:Key="AnnoButtonBorderColor">#191D26</Color>
+                    <Color x:Key="AnnoButtonInsetColor">#94B2EC</Color>
+                    <Color x:Key="AnnoTableHeaderColor">#181F29</Color>
+                    <Color x:Key="AnnoTableBorderColor">#202020</Color>
+                    <Color x:Key="AnnoCardBgColor">#2A3548</Color>
+                    <Color x:Key="AnnoMenuBgColor">#191D26</Color>
+
+                    <SolidColorBrush x:Key="AnnoBgBrush"           Color="{StaticResource AnnoBgColor}" />
+                    <SolidColorBrush x:Key="AnnoBgLighterBrush"    Color="{StaticResource AnnoBgLighterColor}" />
+                    <SolidColorBrush x:Key="AnnoBgDarkerBrush"     Color="{StaticResource AnnoBgDarkerColor}" />
+                    <SolidColorBrush x:Key="AnnoTextBrush"         Color="{StaticResource AnnoTextColor}" />
+                    <SolidColorBrush x:Key="AnnoTextMutedBrush"    Color="{StaticResource AnnoTextMutedColor}" />
+                    <SolidColorBrush x:Key="AnnoAccentBrush"       Color="{StaticResource AnnoAccentColor}" />
+                    <SolidColorBrush x:Key="AnnoAccentLightBrush"  Color="{StaticResource AnnoAccentLightColor}" />
+                    <SolidColorBrush x:Key="AnnoButtonBorderBrush" Color="{StaticResource AnnoButtonBorderColor}" />
+                    <SolidColorBrush x:Key="AnnoButtonInsetBrush"  Color="{StaticResource AnnoButtonInsetColor}" />
+                    <SolidColorBrush x:Key="AnnoTableHeaderBrush"  Color="{StaticResource AnnoTableHeaderColor}" />
+                    <SolidColorBrush x:Key="AnnoTableBorderBrush"  Color="{StaticResource AnnoTableBorderColor}" />
+                    <SolidColorBrush x:Key="AnnoCardBgBrush"       Color="{StaticResource AnnoCardBgColor}" />
+                    <SolidColorBrush x:Key="AnnoMenuBgBrush"       Color="{StaticResource AnnoMenuBgColor}" />
+
+                    <RadialGradientBrush x:Key="AnnoWindowGradient"
+                                         Center="50%,0%" GradientOrigin="50%,0%"
+                                         RadiusX="100%" RadiusY="100%">
+                        <GradientStop Offset="0.0" Color="#262F44" />
+                        <GradientStop Offset="0.7" Color="#161B26" />
+                    </RadialGradientBrush>
+                    <RadialGradientBrush x:Key="AnnoHeaderGradient"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="60%" RadiusY="60%">
+                        <GradientStop Offset="0.0" Color="#2B3644" />
+                        <GradientStop Offset="0.6" Color="#1A232F" />
+                    </RadialGradientBrush>
+                    <RadialGradientBrush x:Key="AnnoButtonBg"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="50%" RadiusY="50%">
+                        <GradientStop Offset="0.0" Color="#505A73" />
+                        <GradientStop Offset="0.68" Color="#2C3A55" />
+                    </RadialGradientBrush>
+                    <RadialGradientBrush x:Key="AnnoButtonBgHover"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="50%" RadiusY="50%">
+                        <GradientStop Offset="0.0" Color="#768099" />
+                        <GradientStop Offset="0.68" Color="#374561" />
+                    </RadialGradientBrush>
+                    <RadialGradientBrush x:Key="AnnoButtonBgActive"
+                                         Center="50%,50%" GradientOrigin="50%,50%"
+                                         RadiusX="50%" RadiusY="50%">
+                        <GradientStop Offset="0.0" Color="#9B2A35" />
+                        <GradientStop Offset="0.7"  Color="#5F032E" />
+                    </RadialGradientBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
+
+        <!-- Window: radial gradient body, dark text on parchment / light text on navy.
+             FontFamily defaults to Inter (provided by Avalonia.Fonts.Inter). -->
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource AnnoWindowGradient}" />
+            <Setter Property="Foreground" Value="{DynamicResource AnnoTextBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
+        </Style>
+
+        <!-- Anno-style bombé tile: nested borders simulate the multi inset
+             box-shadow stack from the source CSS:
+               outer Border  → dark rim (BorderBrush button-border)
+               middle Border → radial gradient (button-bg) — the bombé fill
+               inner Border  → light highlight border (button-inset) =
+                               the bright top edge of the bombé surface
+             Plus a real Avalonia BoxShadow for the soft drop shadow under it.
+             Hover/active swap the middle Background. -->
+        <Style Selector="Button.tool">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource AnnoTextBrush}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBg}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border CornerRadius="7"
+                            BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
+                            BorderThickness="1.5"
+                            BoxShadow="0 2 4 0 #00000055, 0 1 1 0 #ffffff10">
+                        <Border x:Name="PART_Inner"
+                                CornerRadius="5"
+                                Margin="1"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{DynamicResource AnnoButtonInsetBrush}"
+                                BorderThickness="1">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              FontSize="{TemplateBinding FontSize}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.tool:pointerover Border#PART_Inner">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgHover}" />
+        </Style>
+        <Style Selector="Button.tool.active">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="Foreground" Value="#FFE8DA" />
+        </Style>
+        <Style Selector="Button.tool.active Border#PART_Inner">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+        </Style>
+
+        <!-- ============================================================
+             ANNO 117 IN-GAME MENU (port of fanmenuanno/style.css)
+             Two-tier menu hovering at the bottom of the window:
+               .menubar-top     = pill with menu-entry-2 tabs
+               .menubar-bottom  = panel hatched, with menu-entry-1 round
+                                  buttons on each side + toolbar/search
+             Colors verbatim from the user's mockup: #1A1B1F navy, accent
+             bordeaux #69384A→#192126, highlight #94B2EC inset, parchment
+             border #C4A882 on the search box. Backgrounds use linear or
+             radial gradients to recreate the bombé look.
+             ============================================================ -->
+
+        <!-- Outer menu container -->
+        <Style Selector="Border.menu-root">
+            <Setter Property="Background" Value="#ED191D26" />
+            <Setter Property="CornerRadius" Value="15,15,0,0" />
+            <Setter Property="BorderBrush" Value="#191D26" />
+            <Setter Property="BorderThickness" Value="2,2,2,0" />
+            <Setter Property="BoxShadow" Value="inset 0 0 1 0 #94B2EC" />
+            <Setter Property="Padding" Value="20,10,20,0" />
+        </Style>
+
+        <!-- Top bar pill (.menubar-top) -->
+        <Style Selector="Border.menubar-top">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderBrush" Value="#3A4150" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BoxShadow" Value="inset 0 2 4 0 #00000055" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="#252A33" />
+                    <GradientStop Offset="1.0" Color="#1E2128" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Level-2 entry (tab in the top bar). Default = transparent with
+             inset highlight; when .selected is added, swap to bordeaux radial
+             on the inner image and a horizontal bordeaux→navy gradient on the
+             whole pill. -->
+        <Style Selector="Border.menu-entry-2">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BorderBrush" Value="#2B3245" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BoxShadow" Value="inset 0 0 2 0 #94B2EC" />
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.menu-entry-2.selected">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                    <GradientStop Offset="0.0" Color="#69384A" />
+                    <GradientStop Offset="0.5" Color="#191D26" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <!-- The inner "icon" of a selected level-2 entry: bordeaux radial -->
+        <Style Selector="Border.menu-entry-2-inner">
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.menu-entry-2-inner.selected">
+            <Setter Property="BorderBrush" Value="#181C26" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BoxShadow" Value="inset 0 0 2 0 #94B2EC" />
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                    <GradientStop Offset="0.0" Color="#A05779" />
+                    <GradientStop Offset="0.7" Color="#501F36" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Level-3 entry (sub-menu chip next to the selected level-2 tab) -->
+        <Style Selector="Border.menu-entry-3">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="#181C26" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BoxShadow" Value="inset 0 0 2 0 #94B2EC" />
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                    <GradientStop Offset="0.0" Color="#49566A" />
+                    <GradientStop Offset="0.7" Color="#323E53" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Bottom bar (.menubar-bottom): hatched panel.
+             We can't natively replicate the triple repeating-linear-gradient
+             from CSS in Avalonia, but a flat navy fill + the pre-existing
+             noise overlay reads similarly. -->
+        <Style Selector="Border.menubar-bottom">
+            <Setter Property="Background" Value="#262F40" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="BorderBrush" Value="#191D26" />
+            <Setter Property="BorderThickness" Value="0,2,0,0" />
+            <Setter Property="BoxShadow" Value="0 -4 12 0 #00000055, 0 -10 12 0 #00000022" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="MinHeight" Value="60" />
+        </Style>
+
+        <!-- Level-1 button wrapper (the dome that hangs above the bottom bar) -->
+        <Style Selector="Border.menu-entry-1-wrapper">
+            <Setter Property="CornerRadius" Value="40,40,0,0" />
+            <Setter Property="Background" Value="#191D26" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="Margin" Value="-12,-20,0,0" />
+        </Style>
+
+        <!-- Round level-1 button (inside the dome wrapper) -->
+        <Style Selector="Border.menu-entry-1">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="BorderBrush" Value="#181C26" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BoxShadow" Value="inset 0 0 2 0 #94B2EC" />
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                    <GradientStop Offset="0.0" Color="#49566A" />
+                    <GradientStop Offset="0.7" Color="#323E53" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Border.menu-entry-1.selected">
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                    <GradientStop Offset="0.0" Color="#A05779" />
+                    <GradientStop Offset="0.7" Color="#501F36" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Toolbar entry: rectangular gradient button for social/options
+             icons sitting in the bottom bar. -->
+        <Style Selector="Border.toolbar-entry">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="#4A5568" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="#3D4A5C" />
+                    <GradientStop Offset="0.5" Color="#2F3A4A" />
+                    <GradientStop Offset="1.0" Color="#252F3D" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Search box: navy fill, parchment border. -->
+        <Style Selector="Border.search-box">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="BorderBrush" Value="#C4A882" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="BoxShadow" Value="inset 0 1 0 0 #FFFFFF14, 0 2 8 0 #00000055" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="#252A33" />
+                    <GradientStop Offset="1.0" Color="#1E2128" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Menu-bar variant of Button.tool: locked to the navy palette and
+             fully circular so it reads as one of the same family as the round
+             tab domes above. Hardcodes the radial gradient (no DynamicResource)
+             since the menu is always dark in annolayouts.de. -->
+        <Style Selector="Button.menu-tool">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="#E0E5F0" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border CornerRadius="22"
+                            BorderBrush="#0B1726"
+                            BorderThickness="1.5"
+                            BoxShadow="0 2 4 0 #00000077, 0 1 1 0 #ffffff10">
+                        <Border x:Name="PART_Inner"
+                                CornerRadius="21"
+                                Margin="1"
+                                BorderBrush="#94B2EC"
+                                BorderThickness="1">
+                            <Border.Background>
+                                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                                    <GradientStop Offset="0.0" Color="#505A73" />
+                                    <GradientStop Offset="0.68" Color="#2C3A55" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              FontSize="{TemplateBinding FontSize}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.menu-tool:pointerover Border#PART_Inner">
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                    <GradientStop Offset="0.0" Color="#768099" />
+                    <GradientStop Offset="0.68" Color="#374561" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Button.menu-tool.active Border#PART_Inner">
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+                    <GradientStop Offset="0.0" Color="#A05779" />
+                    <GradientStop Offset="0.7"  Color="#501F36" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Button.menu-tool.active">
+            <Setter Property="Foreground" Value="#FFE8DA" />
+        </Style>
+
+        <!-- Round FAB: identical 3-border construction, but circular. -->
+        <Style Selector="Button.fab">
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource AnnoTextBrush}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBg}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border CornerRadius="26"
+                            BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
+                            BorderThickness="1.5"
+                            BoxShadow="0 3 6 0 #00000066, 0 1 1 0 #ffffff14">
+                        <Border x:Name="PART_Inner"
+                                CornerRadius="24"
+                                Margin="1"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{DynamicResource AnnoButtonInsetBrush}"
+                                BorderThickness="1">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              FontSize="{TemplateBinding FontSize}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.fab:pointerover Border#PART_Inner">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgHover}" />
+        </Style>
+        <Style Selector="Button.fab.fab-red">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="Foreground" Value="#FFE8DA" />
+        </Style>
+        <Style Selector="Button.fab.fab-red Border#PART_Inner">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+        </Style>
+
+        <!-- Accent button: bordeaux radial, used for primary actions like "Save mod". -->
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="Foreground" Value="#FFE8DA" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AnnoButtonBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="TextBlock.section-header">
+            <Setter Property="Background" Value="{DynamicResource AnnoTableHeaderBrush}" />
+            <Setter Property="Foreground" Value="#F4ECD8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="12,6" />
+        </Style>
+
+        <!-- Anno-style list items: alternating beige rows like the goods table on
+             annolayouts.de. Hover lightens the row, selection swaps to bordeaux. -->
+        <Style Selector="ListBoxItem">
+            <Setter Property="Background" Value="{DynamicResource AnnoCardBgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AnnoTextBrush}" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AnnoTableBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style Selector="ListBoxItem:nth-child(2n) /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="TextBlock.Foreground" Value="#FFE8DA" />
+        </Style>
+
+        <!-- TreeView items follow the same look (used for the maps list + the
+             elements tree). Indent stays Fluent-default so the chevron is fine. -->
+        <Style Selector="TreeViewItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource AnnoTextBrush}" />
+        </Style>
+        <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
+        </Style>
+        <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="TextBlock.Foreground" Value="#FFE8DA" />
+        </Style>
+
+        <!-- Bandeau "table header" reusable: deep brown gradient block, ivory text -->
+        <Style Selector="Border.table-header">
+            <Setter Property="Background" Value="{DynamicResource AnnoHeaderGradient}" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AnnoButtonBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.table-header TextBlock">
+            <Setter Property="Foreground" Value="#F4ECD8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <!-- "Roman helmet" panel: top corners strongly rounded, bottom corners
+             only slightly. CSS uses border-top-X-radius:50% 25% on annolayouts
+             — Avalonia doesn't support percentage radii, so we approximate with
+             a fixed 22 / 8 split. Drop shadow + parchment background give it
+             the elevated card feel. Apply via Classes="anno-panel". -->
+        <Style Selector="Border.anno-panel">
+            <Setter Property="CornerRadius" Value="22,22,8,8" />
+            <Setter Property="Background" Value="{DynamicResource AnnoCardBgBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AnnoButtonBorderBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BoxShadow" Value="0 8 16 0 #00000044, 0 2 4 0 #00000022" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <!-- Helmet panel header (top dome with the strong rounded corners): same
+             radius as the parent at the top, sharp at the bottom so it lines up
+             with the body below. Used for the title of a section/dialog. -->
+        <Style Selector="Border.anno-panel-header">
+            <Setter Property="CornerRadius" Value="20,20,0,0" />
+            <Setter Property="Background" Value="{DynamicResource AnnoHeaderGradient}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AnnoButtonBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="16,8" />
+        </Style>
+        <Style Selector="Border.anno-panel-header TextBlock">
+            <Setter Property="Foreground" Value="#F4ECD8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.anno-panel-body">
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+
+        <!-- ============================================================
+             CONCEPT (mod-creator) UTILITIES
+             Tokens & utilitaires extraits de tokens.css/components.css du
+             concept React. On ajoute par-dessus la base existante : Cinzel
+             pour les titres, eyebrow gold capitalisé, séparateur orné,
+             onglets de biome avec accent doré, et "size pills" S/M/L/XL
+             pour le panneau "Place Islands".
+             ============================================================ -->
+
+        <!-- Display title (Cinzel, lettrage espacé — pour les titres de section) -->
+        <Style Selector="TextBlock.t-display">
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="LetterSpacing" Value="1.2" />
+        </Style>
+
+        <!-- Eyebrow: petit lettrage doré capitalisé (au-dessus d'un titre) -->
+        <Style Selector="TextBlock.t-eyebrow">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="LetterSpacing" Value="2.5" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+
+        <!-- Texte doré pour valeurs / accents -->
+        <Style Selector="TextBlock.t-gold">
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold400Brush}" />
+        </Style>
+        <Style Selector="TextBlock.t-dim">
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+        <Style Selector="TextBlock.t-mute">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
+        <!-- Séparateur orné: filet doré horizontal "transparent → gold → transparent".
+             Hauteur 1px, à mettre dans un Border avec Margin vertical. -->
+        <Style Selector="Border.divider-ornate">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="0,8" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                    <GradientStop Offset="0.0" Color="Transparent" />
+                    <GradientStop Offset="0.5" Color="{StaticResource ConceptGold700}" />
+                    <GradientStop Offset="1.0" Color="Transparent" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- Variant "no-bullet" pour les RadioButton stylés en pill/chip/tab.
+             Avalonia Fluent dessine un cercle bullet à gauche du contenu par
+             défaut ; on remplace le Template par un simple Border + Content,
+             pour que les classes biome-tab / size-pill / type-chip lookent
+             comme un ToggleButton custom mais avec le comportement RadioButton
+             (mutex via GroupName). -->
+        <Style Selector="RadioButton.biome-tab, RadioButton.size-pill, RadioButton.type-chip">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Padding="{TemplateBinding Padding}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Onglet de biome (Latium / Albion / etc.). Sélectionné → background
+             dégradé bordeaux subtil + soulignement doré bas.
+             Les selectors `ToggleButton.X` matchent aussi `RadioButton.X` car
+             RadioButton dérive de ToggleButton dans Avalonia. -->
+        <Style Selector="ToggleButton.biome-tab">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="Padding" Value="20,10" />
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource AnnoTextMutedBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="ToggleButton.biome-tab:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ToggleButton.biome-tab:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
+        </Style>
+        <Style Selector="ToggleButton.biome-tab:checked">
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="#2D7A2838" />
+                    <GradientStop Offset="1.0" Color="Transparent" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.biome-tab:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- "Size pill" pour Place Islands (S, M, L, XL).
+             Cinzel petit + fond ink avec bordure dorée subtile,
+             actif = fond bordeaux radial + texte ivoire. -->
+        <Style Selector="ToggleButton.size-pill">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource AnnoBgDarkerBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold400Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="ToggleButton.size-pill:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+        </Style>
+        <Style Selector="ToggleButton.size-pill:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="TextBlock.Foreground" Value="#FFE8DA" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+        </Style>
+
+        <!-- "Type chip" pour Place Islands (N, S, P, T, V, C). Plus petit qu'un
+             size-pill, carré et coloré selon le type d'île. La couleur du type
+             est appliquée via Background inline dans le XAML d'utilisation. -->
+        <Style Selector="ToggleButton.type-chip">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="#F0E8D8" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+        <Style Selector="ToggleButton.type-chip:pointerover">
+            <Setter Property="Opacity" Value="1.0" />
+        </Style>
+        <Style Selector="ToggleButton.type-chip:checked">
+            <Setter Property="Opacity" Value="1.0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold400Brush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <!-- Header bar buttons (sub-style of accent for the New Map / Import / Export
+             actions in the top bar). Hérite du look "accent" mais plus compact. -->
+        <Style Selector="Button.header-action">
+            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.header-action:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoBgBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="TextBlock.Foreground" Value="{DynamicResource ConceptGold300Brush}" />
+        </Style>
+        <Style Selector="Button.header-action.primary">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="Foreground" Value="#FFE8DA" />
+        </Style>
+        <Style Selector="Button.header-action.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
+            <Setter Property="TextBlock.Foreground" Value="#FFFFFF" />
+        </Style>
     </Application.Styles>
 </Application>

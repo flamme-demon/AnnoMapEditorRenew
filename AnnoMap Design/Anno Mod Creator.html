@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Anno Mod Creator — Charte graphique & Éditeur</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles/tokens.css" />
+<link rel="stylesheet" href="styles/components.css" />
+
+<style>
+  html, body { height: 100%; }
+  body { background: var(--color-ink-950); }
+  #root { height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="src/Icons.jsx"></script>
+<script type="text/babel" src="src/Charter.jsx"></script>
+<script type="text/babel" src="src/Editor.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "lang": "en",
+  "layout": "default",
+  "showCharter": true,
+  "showEditor": true,
+  "primaryHue": 350
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // Apply primary hue tweak (rotates wine accent)
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (t.primaryHue !== 350) {
+      // Map slider 0..360 to subtle hue rotation
+      root.style.setProperty('--color-wine-700', `oklch(0.42 0.13 ${t.primaryHue})`);
+      root.style.setProperty('--color-wine-800', `oklch(0.34 0.12 ${t.primaryHue})`);
+      root.style.setProperty('--color-wine-600', `oklch(0.50 0.14 ${t.primaryHue})`);
+      root.style.setProperty('--color-wine-900', `oklch(0.27 0.10 ${t.primaryHue})`);
+    } else {
+      root.style.removeProperty('--color-wine-700');
+      root.style.removeProperty('--color-wine-800');
+      root.style.removeProperty('--color-wine-600');
+      root.style.removeProperty('--color-wine-900');
+    }
+  }, [t.primaryHue]);
+
+  return (
+    <React.Fragment>
+      <DesignCanvas>
+        <DCSection id="charter" title="Charte graphique" subtitle="Tokens, composants, ornements">
+          {t.showCharter && (
+            <DCArtboard id="charter-page" label="Charte complète" width={1200} height={2400}>
+              <Charter />
+            </DCArtboard>
+          )}
+        </DCSection>
+
+        <DCSection id="editor" title="Éditeur de carte" subtitle="Prototype interactif — drag & drop des îles, édition des biomes, zones joueurs">
+          {t.showEditor && (
+            <DCArtboard id="editor-default" label={`Layout standard · ${t.lang.toUpperCase()}`} width={1440} height={900}>
+              <Editor lang={t.lang} layout="default" />
+            </DCArtboard>
+          )}
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel>
+        <TweakSection label="Langue" />
+        <TweakRadio label="Interface" value={t.lang}
+          options={[{ value: 'fr', label: 'FR' }, { value: 'en', label: 'EN' }]}
+          onChange={(v) => setTweak('lang', v)} />
+
+        <TweakSection label="Affichage" />
+        <TweakToggle label="Charte graphique" value={t.showCharter}
+          onChange={(v) => setTweak('showCharter', v)} />
+        <TweakToggle label="Éditeur" value={t.showEditor}
+          onChange={(v) => setTweak('showEditor', v)} />
+
+        <TweakSection label="Palette" />
+        <TweakSlider label="Teinte accent" value={t.primaryHue}
+          min={0} max={360} step={5} unit="°"
+          onChange={(v) => setTweak('primaryHue', v)} />
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+
+window.App = App;
+</script>
+
+<script type="text/babel" data-presets="env,react">
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+</script>
+
+</body>
+</html>

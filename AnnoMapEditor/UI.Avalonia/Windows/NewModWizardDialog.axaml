@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AnnoMapEditor.UI.Avalonia.Windows.NewModWizardDialog"
+        Title="Nouveau mod"
+        Width="640" Height="560"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Border Classes="anno-panel" Margin="20">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <Border Grid.Row="0" Classes="anno-panel-header" CornerRadius="20,20,0,0">
+                <TextBlock Text="✦  Créer un nouveau mod" FontSize="16" FontWeight="SemiBold"
+                           Foreground="#F4ECD8" HorizontalAlignment="Center" />
+            </Border>
+
+            <ScrollViewer Grid.Row="1" Padding="22,16">
+                <StackPanel Spacing="14">
+
+                    <!-- Mod name -->
+                    <StackPanel>
+                        <TextBlock Text="Nom du mod" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBox Watermark="ex: Four Corner Battle"
+                                 Background="{DynamicResource AnnoBgLighterBrush}"
+                                 Foreground="{DynamicResource AnnoTextBrush}"
+                                 BorderBrush="{DynamicResource AnnoButtonBorderBrush}" />
+                    </StackPanel>
+
+                    <!-- Mod ID (auto) -->
+                    <StackPanel>
+                        <TextBlock Text="Identifiant technique (auto)" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBox Text="ame-four-corner-battle"  IsReadOnly="True"
+                                 Background="{DynamicResource AnnoBgDarkerBrush}"
+                                 Foreground="{DynamicResource AnnoTextBrush}"
+                                 BorderBrush="{DynamicResource AnnoButtonBorderBrush}" />
+                    </StackPanel>
+
+                    <!-- Type de carte -->
+                    <StackPanel>
+                        <TextBlock Text="Type de carte" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch"
+                                  Background="{DynamicResource AnnoBgLighterBrush}"
+                                  Foreground="{DynamicResource AnnoTextBrush}">
+                            <ComboBoxItem>Corners (4 quadrants)</ComboBoxItem>
+                            <ComboBoxItem>Chain (chaîne d'îles)</ComboBoxItem>
+                            <ComboBoxItem>Donut (anneau)</ComboBoxItem>
+                            <ComboBoxItem>Default (libre)</ComboBoxItem>
+                            <ComboBoxItem>Personnalisé…</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Régions à supporter -->
+                    <StackPanel>
+                        <TextBlock Text="Régions à supporter" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBlock Text="Un variant sera généré pour chaque région cochée."
+                                   Opacity="0.7" FontSize="11" Margin="0,0,0,6" />
+                        <Grid ColumnDefinitions="*,*,*">
+                            <CheckBox Grid.Column="0" Content="🏛 Roman" IsChecked="True" />
+                            <CheckBox Grid.Column="1" Content="☘ Albion (Celtic)" />
+                            <CheckBox Grid.Column="2" Content="🐪 Egyptian" IsEnabled="False" ToolTip.Tip="DLC à venir" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Difficultés -->
+                    <StackPanel>
+                        <TextBlock Text="Difficultés à générer" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <Grid ColumnDefinitions="*,*,*">
+                            <CheckBox Grid.Column="0" Content="Easy"   IsChecked="True" />
+                            <CheckBox Grid.Column="1" Content="Medium" IsChecked="True" />
+                            <CheckBox Grid.Column="2" Content="Hard" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Tailles (DLC1 expanded) -->
+                    <StackPanel>
+                        <TextBlock Text="Tailles" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <Grid ColumnDefinitions="*,*">
+                            <CheckBox Grid.Column="0" Content="2048 (vanilla)" IsChecked="True" />
+                            <CheckBox Grid.Column="1" Content="2688 (DLC1 expanded)" IsChecked="True" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Preview résumé -->
+                    <Border Background="{DynamicResource AnnoBgDarkerBrush}" CornerRadius="6"
+                            Padding="12,8" BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
+                            BorderThickness="1" Margin="0,4,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Récapitulatif" FontWeight="SemiBold" Opacity="0.85" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="4 variants seront créés : Roman Easy 2048, Roman Easy 2688, Roman Medium 2048, Roman Medium 2688."
+                                       Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer buttons -->
+            <Border Grid.Row="2" Padding="16,12" CornerRadius="0,0,8,8"
+                    Background="{DynamicResource AnnoBgDarkerBrush}"
+                    BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
+                    BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock Grid.Column="0" Text="POC — fake data" Opacity="0.6" FontStyle="Italic"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Annuler" Margin="0,0,8,0"
+                            Click="OnCancelClick" />
+                    <Button Grid.Column="2" Classes="accent" Content="Créer le mod"
+                            Click="OnCreateClick" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

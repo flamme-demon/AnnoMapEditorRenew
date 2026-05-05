@@ -25,6 +25,10 @@ namespace AnnoMapEditor
         /// isometric diamond orientation (north pointing up). 0° = flat top-down view.</summary>
         public int MapViewRotationDeg { get; set; } = -45;
 
+        /// <summary>"Light" (parchment) or "Dark" (navy) — picked by the toggle
+        /// FAB in the bottom bar, persisted across sessions.</summary>
+        public string ThemeVariant { get; set; } = "Light";
+
         // Window state persistence
         public double? MainWindowWidth { get; set; }
         public double? MainWindowHeight { get; set; }

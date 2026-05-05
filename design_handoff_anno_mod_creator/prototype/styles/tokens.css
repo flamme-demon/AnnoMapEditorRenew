@@ -1,0 +1,156 @@
+/* ─────────────────────────────────────────────────────────────
+   Anno Mod Creator — Design Tokens
+   Charte graphique inspirée d'une esthétique antique romaine
+   (originale, non dérivée d'aucune marque).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Couleurs : surfaces sombres (chrome principal) ── */
+  --color-ink-950: #0d1626;        /* fond le plus profond, vignettes */
+  --color-ink-900: #14213a;        /* fond principal (panneaux) */
+  --color-ink-800: #1a2840;        /* surface niveau 1 */
+  --color-ink-700: #243454;        /* surface niveau 2 (cards, inputs) */
+  --color-ink-600: #324466;        /* hover, bordures actives */
+  --color-ink-500: #4a5e82;        /* texte secondaire sur sombre */
+
+  /* ── Accents (rouge bordeaux pourpre — accent primaire) ── */
+  --color-wine-900: #4a1620;
+  --color-wine-800: #5e1f2c;
+  --color-wine-700: #7a2838;       /* accent primaire — boutons */
+  --color-wine-600: #963747;       /* hover */
+  --color-wine-500: #b85365;       /* actif/lumière */
+
+  /* ── Or pâle (filets, bordures, texte fin) ── */
+  --color-gold-700: #8a7240;
+  --color-gold-600: #a88a52;
+  --color-gold-500: #c8a96a;       /* or principal */
+  --color-gold-400: #d8bf83;       /* hover/lumière */
+  --color-gold-300: #e8d6a8;       /* texte clair */
+
+  /* ── Surfaces claires (parchemin / pierre — zone carte) ── */
+  --color-stone-100: #f0e8d8;      /* parchemin clair */
+  --color-stone-200: #e0d4be;
+  --color-stone-300: #c8b89c;
+  --color-stone-400: #a89878;
+  --color-stone-500: #877657;
+
+  /* ── Sémantique ── */
+  --color-bg: var(--color-ink-900);
+  --color-bg-elevated: var(--color-ink-800);
+  --color-bg-sunken: var(--color-ink-950);
+  --color-surface: var(--color-ink-700);
+  --color-border: rgba(200, 169, 106, 0.18);   /* filet or léger */
+  --color-border-strong: rgba(200, 169, 106, 0.42);
+  --color-text: #e8e2d0;            /* blanc cassé chaleureux */
+  --color-text-dim: #a8a090;
+  --color-text-mute: #6e6858;
+  --color-text-on-light: #2a2418;
+
+  --color-primary: var(--color-wine-700);
+  --color-primary-hover: var(--color-wine-600);
+  --color-primary-active: var(--color-wine-800);
+
+  /* ── Couleurs joueurs (zones territoriales) ── */
+  --player-1: #b94a4a;   /* rouge */
+  --player-2: #3e6cb5;   /* bleu */
+  --player-3: #4d8c4a;   /* vert */
+  --player-4: #d4a93b;   /* jaune */
+  --player-5: #8a4ca8;   /* violet */
+  --player-6: #d68a3c;   /* orange */
+  --player-7: #2a2a2a;   /* noir */
+  --player-8: #d8d4c8;   /* blanc */
+
+  /* ── Typographie ── */
+  --font-display: "Cinzel", "Trajan Pro", "Cormorant Garamond", Georgia, serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --fs-xxs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-base: 15px;
+  --fs-md: 17px;
+  --fs-lg: 21px;
+  --fs-xl: 28px;
+  --fs-2xl: 38px;
+  --fs-3xl: 52px;
+
+  /* ── Espacements ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ── Rayons ── */
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+
+  /* ── Élévations ── */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.25);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.3);
+  --shadow-glow: 0 0 24px rgba(200, 169, 106, 0.25);
+  --shadow-inset: inset 0 1px 0 rgba(255,255,255,.04), inset 0 -1px 0 rgba(0,0,0,.4);
+
+  /* ── Transitions ── */
+  --t-fast: 120ms cubic-bezier(.2,.7,.3,1);
+  --t-med: 220ms cubic-bezier(.2,.7,.3,1);
+}
+
+/* ── Texture marbre / pierre subtile (utilisée en background sur surfaces sombres) ── */
+.tex-marble {
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(200,169,106,0.04), transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(122,40,56,0.06), transparent 50%),
+    linear-gradient(180deg, var(--color-ink-900), var(--color-ink-800));
+}
+
+.tex-stone {
+  background-color: var(--color-stone-100);
+  background-image:
+    radial-gradient(circle at 30% 20%, rgba(135,118,87,0.08), transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(135,118,87,0.10), transparent 45%),
+    repeating-linear-gradient(45deg,
+      rgba(135,118,87,0.02) 0 2px,
+      transparent 2px 7px);
+}
+
+.tex-vignette {
+  position: relative;
+}
+.tex-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    transparent 50%,
+    rgba(13,22,38,0.5) 100%);
+}
+
+/* ── Filet doré (bordure ornée) ── */
+.gold-line {
+  border: 1px solid var(--color-gold-700);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.5),
+    inset 0 0 0 2px var(--color-gold-700);
+}
+
+/* ── Reset léger ── */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; color: inherit; }

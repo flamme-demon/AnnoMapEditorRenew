@@ -1,0 +1,136 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AnnoMapEditor.UI.Avalonia.Windows.ModStudioWindow"
+        Title="Anno 117 — Mods Studio"
+        Width="1100" Height="720"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <!-- Decorative noise overlay -->
+        <Border IsHitTestVisible="False" Opacity="0.6">
+            <Border.Background>
+                <ImageBrush Source="avares://AnnoMapEditor/Assets/textures/noise_grain.png"
+                            TileMode="Tile" Stretch="None"
+                            DestinationRect="0,0,256,256" />
+            </Border.Background>
+        </Border>
+
+        <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="40,28">
+
+            <!-- Header band -->
+            <Border Grid.Row="0" Classes="anno-panel-header" CornerRadius="22,22,4,4" Padding="20,12">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" Text="🏛  Anno 117 Mods Studio"
+                               FontSize="22" FontWeight="SemiBold" Foreground="#F4ECD8"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Margin="20,0,0,0" Opacity="0.7"
+                               Text="Crée, édite et publie tes mods de cartes — Roman, Albion, Egyptian"
+                               Foreground="#F4ECD8" VerticalAlignment="Center" />
+                    <Button Grid.Column="2" Classes="fab" Content="⚙" ToolTip.Tip="Paramètres" />
+                </Grid>
+            </Border>
+
+            <!-- Action row -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,18,0,18">
+                <Border Grid.Column="0" Classes="anno-panel" Margin="0,0,8,0">
+                    <StackPanel Margin="20,16">
+                        <TextBlock Text="✦  Nouveau mod" FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock Margin="0,4,0,12" Opacity="0.7" TextWrapping="Wrap"
+                                   Text="Démarre un projet vierge et choisis les régions/difficultés à supporter." />
+                        <Button Classes="accent" Content="Créer un nouveau mod" HorizontalAlignment="Left"
+                                Click="OnNewModClick" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="anno-panel" Margin="4,0">
+                    <StackPanel Margin="20,16">
+                        <TextBlock Text="📂  Ouvrir un mod" FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock Margin="0,4,0,12" Opacity="0.7" TextWrapping="Wrap"
+                                   Text="Reprends l'édition d'un mod déjà installé dans le dossier mods/." />
+                        <Button Classes="accent" Content="Parcourir…" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="anno-panel" Margin="8,0,0,0">
+                    <StackPanel Margin="20,16">
+                        <TextBlock Text="🌐  Importer carte vanilla" FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock Margin="0,4,0,12" Opacity="0.7" TextWrapping="Wrap"
+                                   Text="Convertis une carte officielle (Roman / Celtic / Egyptian) en projet de mod éditable." />
+                        <Button Classes="accent" Content="Choisir une carte…" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Local mods list -->
+            <Border Grid.Row="2" Classes="anno-panel">
+                <Grid RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" Classes="anno-panel-header" CornerRadius="20,20,0,0">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Mes mods locaux"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Foreground="#F4ECD8" />
+                            <TextBlock Grid.Column="1" Text="2 mods détectés"
+                                       Foreground="#E0D3B8" Opacity="0.85"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1" Padding="12">
+                        <StackPanel Spacing="8">
+                            <!-- Mod entry: AME_four_corner -->
+                            <Border Background="{DynamicResource AnnoCardBgBrush}" CornerRadius="6"
+                                    Padding="14,10" BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
+                                    BorderThickness="1">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0" Text="📦" FontSize="22"
+                                               Margin="0,0,14,0" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="four corner" FontSize="15" FontWeight="SemiBold" />
+                                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,0,0">
+                                            <TextBlock Text="ame-four-corner@1.0.0" Opacity="0.7" FontSize="11" />
+                                            <TextBlock Text="•" Opacity="0.4" FontSize="11" />
+                                            <TextBlock Text="Type Corners — 1 variant" Opacity="0.7" FontSize="11" />
+                                            <TextBlock Text="•" Opacity="0.4" FontSize="11" />
+                                            <TextBlock Text="Roman 2688 (DLC1 expanded)" Opacity="0.7" FontSize="11" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="🚀 Tester" Classes="tool"
+                                            ToolTip.Tip="Active le mod et lance Anno"
+                                            Margin="0,0,8,0" Width="80" />
+                                    <Button Grid.Column="3" Content="Ouvrir" Classes="accent"
+                                            Click="OnOpenModClick" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Mod entry: Immersive Flagship Mod (read-only example) -->
+                            <Border Background="{DynamicResource AnnoCardBgBrush}" CornerRadius="6"
+                                    Padding="14,10" BorderBrush="{DynamicResource AnnoButtonBorderBrush}"
+                                    BorderThickness="1" Opacity="0.7">
+                                <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0" Text="📦" FontSize="22"
+                                               Margin="0,0,14,0" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="117 Immersive Flagship Mod (AJ)" FontSize="15" FontWeight="SemiBold" />
+                                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,0,0">
+                                            <TextBlock Text="immersive-flagship-mod@1.1.0" Opacity="0.7" FontSize="11" />
+                                            <TextBlock Text="•" Opacity="0.4" FontSize="11" />
+                                            <TextBlock Text="Gameplay mod — pas de cartes" Opacity="0.7" FontSize="11" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="Hors-scope éditeur"
+                                               FontStyle="Italic" Opacity="0.7" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Empty hint -->
+                            <TextBlock Margin="0,16,0,0" HorizontalAlignment="Center" Opacity="0.5"
+                                       Text="Place tes mods dans Documents\Anno 117 - Pax Romana\mods" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Footer status -->
+            <TextBlock Grid.Row="3" Margin="4,12,0,0" Opacity="0.6" FontSize="11"
+                       Text="POC visuel — données fake. Branchement de la logique en phase suivante." />
+        </Grid>
+    </Grid>
+</Window>

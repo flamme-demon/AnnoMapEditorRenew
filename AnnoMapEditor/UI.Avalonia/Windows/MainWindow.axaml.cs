@@ -119,6 +119,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 _mapRenderer.ElementMoveCommitted += OnElementMoveCommitted;
                 _mapRenderer.PlayableAreaResizing += OnPlayableAreaResizing;
                 _mapRenderer.PlayableAreaResized += OnPlayableAreaResized;
+                _mapRenderer.ContextMenuRequested += OnMapContextMenuRequested;
             }
             if (_historyList != null)
                 _historyList.ItemsSource = UndoRedoStack.Instance.UndoHistory;
@@ -147,6 +148,9 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                     ? $"⚠ {dm.ErrorMessage}"
                     : "Prêt. Sélectionne une carte pour en voir le contenu.";
 
+            // Sync the bottom-bar theme FAB with whichever theme was applied at
+            // startup (UserSettings.ThemeVariant) so its icon matches.
+            UpdateThemeToggleIcon();
             LoadMaps();
         }
 
@@ -1017,6 +1021,21 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         private void OnRotateClicked(object? sender, RoutedEventArgs e) => RotateSelected();
         private void OnDeleteClicked(object? sender, RoutedEventArgs e) => DeleteSelected();
 
+        /// <summary>Bottom-bar FAB: flip between Light (parchment) and Dark
+        /// (navy) themes. Updates the icon glyph to reflect the *next* theme,
+        /// like a flashlight toggle.</summary>
+        private void OnToggleThemeClick(object? sender, RoutedEventArgs e)
+        {
+            App.ToggleTheme();
+            UpdateThemeToggleIcon();
+        }
+
+        private void UpdateThemeToggleIcon()
+        {
+            // No-op for the new Anno menu layout: the theme toggle is now a
+            // toolbar-entry Border with an Anno PNG, not a font Button.
+        }
+
         private void DuplicateSelected()
         {
             if (_currentMap is null || _selectedElementForPanel is not IslandElement src) return;
@@ -1746,6 +1765,191 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (_positionValueText is null) return;
             if (!ReferenceEquals(_positionTrackedElement, element)) return;
             _positionValueText.Text = $"({element.Position.X}, {element.Position.Y})";
+        }
+
+        /// <summary>
+        /// Right-click on the canvas. Empty ocean → "Add island here". Existing island →
+        /// Duplicate / Replace + (for fixed islands with the random toggle still on)
+        /// "Uncheck random fertilities / slots", which flips the flag and refreshes the
+        /// properties panel so the user can configure the now-fixed values manually.
+        /// </summary>
+        private void OnMapContextMenuRequested(object? sender, (MapElement? element, Vector2 mapPos) args)
+        {
+            var menu = new ContextMenu();
+
+            if (args.element is null)
+            {
+                var add = new MenuItem { Header = "Ajouter une île ici" };
+                add.Click += async (_, _) => await AddIslandAtPosition(args.mapPos);
+                menu.Items.Add(add);
+
+                // Anno templates expect exactly 4 starting spots (indices 0..3, one per
+                // player). If any are missing, surface an "Add starting spot" entry on the
+                // empty-ocean menu so the user can repair the template in one click.
+                int missingIdx = FindMissingStartingSpotIndex();
+                if (missingIdx >= 0)
+                {
+                    var addSpot = new MenuItem { Header = $"Ajouter point de départ #{missingIdx + 1} ici" };
+                    addSpot.Click += (_, _) => AddStartingSpotAt(args.mapPos, missingIdx);
+                    menu.Items.Add(addSpot);
+                }
+            }
+            else
+            {
+                // Pin the click target as the current selection so DuplicateSelected /
+                // OpenIslandPicker / property toggles all act on it.
+                _selectedElementForPanel = args.element;
+                _mapRenderer?.ReSelectQuiet(args.element);
+
+                if (args.element is IslandElement isl)
+                {
+                    var dup = new MenuItem { Header = "Dupliquer" };
+                    dup.Click += (_, _) => DuplicateSelected();
+                    menu.Items.Add(dup);
+
+                    var rep = new MenuItem { Header = "Remplacer…" };
+                    rep.Click += async (_, _) => await OpenIslandPicker(isl);
+                    menu.Items.Add(rep);
+                }
+
+                if (args.element is FixedIslandElement fi)
+                {
+                    if (fi.RandomizeFertilities)
+                    {
+                        var unc = new MenuItem { Header = "Décocher random fertilités" };
+                        unc.Click += (_, _) =>
+                        {
+                            fi.RandomizeFertilities = false;
+                            // Rebuild the properties pane so the now-revealed manual
+                            // fertility editor is visible and ready for input.
+                            OnMapElementSelected(this, fi);
+                        };
+                        menu.Items.Add(unc);
+                    }
+                    if (fi.RandomizeSlots)
+                    {
+                        var unc = new MenuItem { Header = "Décocher random slots" };
+                        unc.Click += (_, _) =>
+                        {
+                            fi.RandomizeSlots = false;
+                            OnMapElementSelected(this, fi);
+                        };
+                        menu.Items.Add(unc);
+                    }
+                }
+
+                // Always offer Delete on islands and starting spots.
+                if (args.element is IslandElement || args.element is StartingSpotElement)
+                {
+                    var del = new MenuItem { Header = "Supprimer" };
+                    del.Click += (_, _) => DeleteSelected();
+                    menu.Items.Add(del);
+                }
+            }
+
+            if (menu.Items.Count == 0) return;
+            menu.Open(this);
+        }
+
+        /// <summary>
+        /// Returns the lowest player index in 0..3 that has no StartingSpotElement
+        /// in the current map, or -1 if all four are already placed.
+        /// </summary>
+        private int FindMissingStartingSpotIndex()
+        {
+            if (_currentMap is null) return -1;
+            var taken = new System.Collections.Generic.HashSet<int>(
+                _currentMap.Elements.OfType<StartingSpotElement>().Select(s => s.Index));
+            for (int i = 0; i < 4; i++)
+                if (!taken.Contains(i)) return i;
+            return -1;
+        }
+
+        /// <summary>
+        /// Add a StartingSpotElement at <paramref name="mapPos"/> with the given player
+        /// index. Pushes an undo entry so Ctrl+Z removes it. Refreshes the canvas + tree
+        /// + issues panel so the new spot appears immediately.
+        /// </summary>
+        private void AddStartingSpotAt(Vector2 mapPos, int index)
+        {
+            if (_currentMap is null) return;
+            var spot = new StartingSpotElement
+            {
+                Position = mapPos,
+                Index = index
+            };
+            _currentMap.Elements.Add(spot);
+            UndoRedoStack.Instance.Do(new MapElementAddStackEntry(spot, _currentMap));
+            RefreshAfterEdit();
+            RefreshUndoRedoButtons();
+            _mapRenderer?.SelectElement(spot);
+        }
+
+        /// <summary>
+        /// Spawn a fresh island at the given map-space position via the standard picker.
+        /// Filters available choices by the current map's region. Records an undo entry so
+        /// Ctrl+Z removes the new island.
+        /// </summary>
+        private async System.Threading.Tasks.Task AddIslandAtPosition(Vector2 mapPos)
+        {
+            if (_currentMap is null) return;
+
+            string? regionId = _currentMapItem?.Asset?.TemplateRegionId
+                               ?? _currentMap.Session?.Region?.RegionID;
+
+            var choices = new List<IslandChoice>();
+            // Same Continental/ExtraLarge guard as the Replace flow: those sizes are
+            // only valid in very specific contexts, hide them for a from-scratch add.
+            foreach (var size in IslandSize.All)
+            {
+                if (size == IslandSize.Continental) continue;
+                if (size == IslandSize.ExtraLarge) continue;
+                choices.Add(IslandChoice.ForRandom(size));
+            }
+            try
+            {
+                foreach (var asset in DataManager.Instance.IslandRepository)
+                {
+                    if (asset is null) continue;
+                    if (regionId is not null
+                        && !string.Equals(asset.Region?.RegionID, regionId,
+                            System.StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    choices.Add(IslandChoice.ForFixed(asset));
+                }
+            }
+            catch { /* repo not initialized — random buckets only */ }
+
+            var dialog = new IslandPickerDialog(choices, "Ajouter une île");
+            var picked = await dialog.ShowDialog<IslandChoice?>(this);
+            if (picked is null) return;
+
+            IslandElement newEl;
+            if (picked.IsRandom && picked.RandomSize is { } rs)
+            {
+                newEl = new RandomIslandElement(rs, IslandType.Normal)
+                {
+                    Position = mapPos
+                };
+            }
+            else if (picked.IsFixed && picked.FixedAsset is { } fa)
+            {
+                var assetType = fa.IslandType?.FirstOrDefault() ?? IslandType.Normal;
+                newEl = new FixedIslandElement(fa, assetType)
+                {
+                    Position = mapPos
+                };
+            }
+            else
+            {
+                return;
+            }
+
+            _currentMap.Elements.Add(newEl);
+            UndoRedoStack.Instance.Do(new IslandAddStackEntry(newEl, _currentMap));
+            RefreshAfterEdit();
+            RefreshUndoRedoButtons();
+            _mapRenderer?.SelectElement(newEl);
         }
 
         // ------------------- Replace (convert Random ↔ Fixed) -------------------

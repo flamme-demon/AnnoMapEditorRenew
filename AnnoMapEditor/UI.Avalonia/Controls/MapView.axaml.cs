@@ -104,6 +104,13 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
 
         public event EventHandler<MapElement?>? ElementSelected;
         public event EventHandler<MapElement>? ElementMoved;
+        /// <summary>
+        /// Right-click on the canvas: carries the element under the cursor (null when
+        /// clicking on empty ocean) and the map-space coords of the click. The host
+        /// builds a contextual menu — "Add island here" on empty space, or
+        /// Duplicate / Replace / Random fertilities / Random slots on an island.
+        /// </summary>
+        public event EventHandler<(MapElement? element, Vector2 mapPos)>? ContextMenuRequested;
         /// <summary>Raised once at pointer-release after a drag actually changed an
         /// element's position. Subscribers can rerun expensive things (validation,
         /// tree rebuild) without paying for them on every dragged frame.</summary>
@@ -958,6 +965,20 @@ namespace AnnoMapEditor.UI.Avalonia.Controls
                   || props.Properties.IsMiddleButtonPressed
                   || props.Properties.IsRightButtonPressed))
                 return;
+
+            // Right-click → context menu. We don't enter pan/drag mode; we just hand the
+            // host the clicked element (or null for empty ocean) and the map-space
+            // coords so it can spawn the appropriate menu.
+            if (props.Properties.IsRightButtonPressed && _canvas is not null && _map is not null)
+            {
+                var clickedEl = FindElementAt(e.Source as Control, out _);
+                Point pInCanvas = e.GetPosition(_canvas);
+                int mx = (int)pInCanvas.X;
+                int my = _map.Size.Y - (int)pInCanvas.Y; // canvas Y-down → Anno Y-up
+                ContextMenuRequested?.Invoke(this, (clickedEl, new Vector2(mx, my)));
+                e.Handled = true;
+                return;
+            }
 
             // PA handle hit test takes priority over normal element hit test, but only
             // when the user has switched on "Edit playable area".

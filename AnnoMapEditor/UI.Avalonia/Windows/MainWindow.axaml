@@ -5,238 +5,360 @@
         xmlns:l="using:AnnoMapEditor.Utilities"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.MainWindow"
         Title="{l:L Key=app.title}"
-        Width="1280" Height="820"
+        Width="1440" Height="900"
         WindowStartupLocation="CenterScreen">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <!-- Layout aligné sur le concept "Anno Mod Creator" :
+           [Header]              titre + 6 actions (New / Import / Export mod / Export PNG / Doc / Support)
+           [Biome tabs]          onglets Latium / Albion / Désert(WIP) / Nordique(WIP)
+           [Body 3 colonnes]     Statistics (gauche) · Map canvas (centre) · Place islands+Selection+View (droite)
+           [Footer]              Status + Undo/Redo
 
-        <Border Grid.Row="0" Padding="20,14" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
-                    <TextBlock Text="{l:L Key=app.tagline}" FontSize="18" FontWeight="SemiBold" />
-                    <TextBlock x:Name="GameTitle" Opacity="0.7" VerticalAlignment="Center" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                    <Button Content="{l:L Key=main.save_mod}" Click="OnSaveModClicked"
-                            x:Name="SaveModButton" IsEnabled="False"
-                            Classes="accent" />
-                    <Button Content="{l:L Key=main.back_to_start}" Click="OnBackToStart" />
-                </StackPanel>
-            </Grid>
+         Le bandeau de menu Anno-style (menu-root, dome tabs, etc.) du précédent prototype n'est
+         plus présent : le concept React l'a remplacé par un header simple + footer minimal.
+
+         Tous les x:Name référencés par MainWindow.axaml.cs sont préservés. Ceux qui ne font
+         pas partie du nouveau concept (galerie vanilla, SessionPropsPanel, ElementsTree…)
+         sont conservés en compatibilité dans un Border IsVisible="False" en bas du Grid root —
+         leur logique est intacte mais hors-écran tant qu'on ne les recâble pas dans le nouveau flux. -->
+
+    <Grid>
+        <!-- Texture grain de papier (héritée du précédent layout, donne le rendu parchemin) -->
+        <Border IsHitTestVisible="False" Opacity="0.5">
+            <Border.Background>
+                <ImageBrush Source="avares://AnnoMapEditor/Assets/textures/noise_grain.png"
+                            TileMode="Tile" Stretch="None"
+                            DestinationRect="0,0,256,256" />
+            </Border.Background>
         </Border>
 
-        <Grid Grid.Row="1" ColumnDefinitions="380,*,320">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
 
-            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,Auto,*,Auto">
-                <TextBlock Grid.Row="0" Margin="20,16,20,8" FontSize="16" FontWeight="SemiBold"
-                           Text="{l:L Key=main.maps_title}" />
+            <!-- ============================================================
+                 [HEADER] Titre + barre d'actions globales
+                 ============================================================ -->
+            <Border Grid.Row="0" Padding="24,14"
+                    Background="{DynamicResource AnnoHeaderGradient}"
+                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+                    BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="Auto,*,Auto">
 
-                <ItemsControl Grid.Row="1" Margin="20,0,20,8" x:Name="DlcFilters">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:DlcFilter">
-                            <ToggleButton Content="{Binding Label}"
-                                          IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-                                          Margin="0,0,6,6"
-                                          Padding="10,4"
-                                          FontSize="12" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <TextBlock Grid.Row="2" Margin="20,0,20,8" Opacity="0.6" FontSize="12"
-                           x:Name="MapsCountLabel" />
-
-                <TreeView Grid.Row="3" Margin="20,0,20,8" x:Name="MapsList"
-                          SelectionChanged="OnMapSelected">
-                    <TreeView.ItemTemplate>
-                        <TreeDataTemplate x:DataType="vm:MapListEntry"
-                                          ItemsSource="{Binding Children}">
-                            <StackPanel Spacing="2" Margin="0,4">
-                                <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding SubHeader}" FontSize="11" Opacity="0.7" />
-                            </StackPanel>
-                        </TreeDataTemplate>
-                    </TreeView.ItemTemplate>
-                </TreeView>
-
-                <!-- Session properties (active once a map is loaded). Mirrors the upstream
-                     Anno 1800 editor layout: region / map size / playable area size /
-                     edit toggle, with the per-edge advanced editor tucked behind an Expander. -->
-                <Border Grid.Row="4" x:Name="SessionPropsPanel"
-                        BorderBrush="{DynamicResource SystemBaseLowColor}"
-                        BorderThickness="0,1,0,0"
-                        Padding="20,12" IsVisible="False">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="{l:L Key=main.session_section}" FontSize="14" FontWeight="SemiBold" />
-
-                        <Grid ColumnDefinitions="120,*">
-                            <TextBlock Grid.Column="0" Text="{l:L Key=main.session_region}" VerticalAlignment="Center" Opacity="0.7" />
-                            <TextBlock Grid.Column="1" x:Name="SessionRegionLabel" FontWeight="SemiBold" />
-                        </Grid>
-
-                        <Grid ColumnDefinitions="120,*">
-                            <TextBlock Grid.Column="0" Text="{l:L Key=main.session_map_size}" VerticalAlignment="Center" Opacity="0.7" />
-                            <TextBlock Grid.Column="1" x:Name="SessionMapSizeLabel" FontWeight="SemiBold" />
-                        </Grid>
-
-                        <Grid ColumnDefinitions="120,*">
-                            <TextBlock Grid.Column="0" Text="{l:L Key=main.session_pa_size}" VerticalAlignment="Center" Opacity="0.7" />
-                            <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                                <Slider Grid.Column="0" x:Name="SessionPaSlider" Margin="0,0,8,0"
-                                        Minimum="64" Maximum="4096"
-                                        ValueChanged="OnSessionPaSliderChanged"
-                                        PointerWheelChanged="OnSessionPaSliderWheel" />
-                                <TextBlock Grid.Column="1" x:Name="SessionPaSizeLabel"
-                                           VerticalAlignment="Center" FontWeight="SemiBold"
-                                           MinWidth="50" TextAlignment="Right" />
-                            </Grid>
-                        </Grid>
-
-                        <CheckBox x:Name="SessionEditPaToggle"
-                                  Content="{l:L Key=main.session_edit_pa}"
-                                  IsCheckedChanged="OnSessionEditPaToggleChanged" />
-
-                        <!-- Capped height + scroll so a noisy validator (e.g. 40+ issues on
-                             Taludas-style maps with many duplicate-position fixed islands)
-                             can't push the maps list off screen. -->
-                        <Border BorderBrush="{DynamicResource SystemBaseLowColor}" BorderThickness="0,1,0,0"
-                                Padding="0,8,0,4">
-                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel x:Name="IssuesPanel" Spacing="2" />
-                            </ScrollViewer>
+                    <!-- Branding : Cinzel + filet doré sous le titre -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14"
+                                VerticalAlignment="Center">
+                        <Border Width="36" Height="36"
+                                CornerRadius="18"
+                                Background="{DynamicResource AnnoButtonBgActive}"
+                                BorderBrush="{DynamicResource ConceptGold500Brush}"
+                                BorderThickness="1">
+                            <TextBlock Text="A" FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="20" FontWeight="Bold" Foreground="#FFE8DA"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-
-                        <Expander Header="{l:L Key=main.session_advanced}">
-                            <StackPanel Spacing="4" Margin="0,4,0,0">
-                                <Grid ColumnDefinitions="100,*">
-                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_x1}" VerticalAlignment="Center" />
-                                    <NumericUpDown Grid.Column="1" x:Name="PaX1Box" Increment="32" />
-                                </Grid>
-                                <Grid ColumnDefinitions="100,*">
-                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_y1}" VerticalAlignment="Center" />
-                                    <NumericUpDown Grid.Column="1" x:Name="PaY1Box" Increment="32" />
-                                </Grid>
-                                <Grid ColumnDefinitions="100,*">
-                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_x2}" VerticalAlignment="Center" />
-                                    <NumericUpDown Grid.Column="1" x:Name="PaX2Box" Increment="32" />
-                                </Grid>
-                                <Grid ColumnDefinitions="100,*">
-                                    <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_y2}" VerticalAlignment="Center" />
-                                    <NumericUpDown Grid.Column="1" x:Name="PaY2Box" Increment="32" />
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
-                                    <Button Content="{l:L Key=main.playable_apply}" Click="OnApplyPlayableArea" Classes="accent" />
-                                    <Button Content="{l:L Key=main.playable_reset}" Click="OnResetPlayableArea" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Expander>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*">
-                <StackPanel Grid.Row="0" Margin="20,16,20,0" Spacing="4">
-                    <TextBlock x:Name="MapDetailTitle" FontSize="18" FontWeight="SemiBold"
-                               Text="{l:L Key=main.select_map_hint}" />
-                    <TextBlock x:Name="MapDetailSubtitle" Opacity="0.7" FontSize="12" />
-                </StackPanel>
-
-                <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,*,Auto,*"
-                      Margin="20,12,20,8" x:Name="MapStatsGrid">
-                    <TextBlock Grid.Column="0" Text="{l:L Key=main.size}" Opacity="0.6" />
-                    <TextBlock Grid.Column="1" x:Name="StatSize" FontWeight="SemiBold" Margin="6,0,0,0" />
-                    <TextBlock Grid.Column="2" Text="{l:L Key=main.playable_area}" Opacity="0.6" Margin="16,0,0,0" />
-                    <TextBlock Grid.Column="3" x:Name="StatPlayable" FontWeight="SemiBold" Margin="6,0,0,0" />
-                    <TextBlock Grid.Column="4" Text="{l:L Key=main.elements}" Opacity="0.6" Margin="16,0,0,0" />
-                    <TextBlock Grid.Column="5" x:Name="StatElements" FontWeight="SemiBold" Margin="6,0,0,0" />
-                </Grid>
-
-                <Border Grid.Row="2" BorderBrush="{DynamicResource SystemBaseLowColor}"
-                        BorderThickness="1,1,0,0" Margin="20,0,0,0">
-                    <c:MapView x:Name="MapRenderer" />
-                </Border>
-            </Grid>
-
-            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseLowColor}"
-                    BorderThickness="1,0,0,0">
-                <Grid RowDefinitions="Auto,Auto,*,Auto,160">
-
-                    <!-- Top: hierarchical tree of map elements grouped by category. Capped at
-                         260 px tall (with internal scroll) so a long element list never pushes
-                         the Properties panel off-screen below. -->
-                    <Grid Grid.Row="0" RowDefinitions="Auto,*" Margin="16,12,16,8">
-                        <TextBlock Grid.Row="0" Text="{l:L Key=main.tree_title}"
-                                   FontSize="14" FontWeight="SemiBold" Margin="0,0,0,6" />
-                        <ScrollViewer Grid.Row="1" MaxHeight="260" VerticalScrollBarVisibility="Auto">
-                            <TreeView x:Name="ElementsTree"
-                                      SelectionChanged="OnTreeSelectionChanged">
-                                <TreeView.ItemTemplate>
-                                    <TreeDataTemplate x:DataType="vm:MapElementNode"
-                                                      ItemsSource="{Binding Children}">
-                                        <TextBlock Text="{Binding Label}"
-                                                   FontWeight="{Binding IsCategory,
-                                                       Converter={x:Static l:BoolToFontWeight.Instance}}" />
-                                    </TreeDataTemplate>
-                                </TreeView.ItemTemplate>
-                            </TreeView>
-                        </ScrollViewer>
-                    </Grid>
-
-                    <Border Grid.Row="1" BorderBrush="{DynamicResource SystemBaseLowColor}"
-                            BorderThickness="0,1,0,0" />
-
-                    <!-- Middle: properties panel for the selected element. Always-visible
-                         scrollbar so the user knows the panel is scrollable, even on short
-                         content (avoids the "where is the scrollbar?" surprise on randoms). -->
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" Padding="16">
-                        <StackPanel Spacing="12">
-                            <TextBlock Text="{l:L Key=main.properties}" FontSize="14" FontWeight="SemiBold" />
-                            <TextBlock x:Name="SelHint" Opacity="0.6" FontSize="12"
-                                       Text="{l:L Key=main.no_selection_hint}" />
-                            <StackPanel x:Name="ActionButtons" Orientation="Horizontal" IsVisible="False">
-                                <Button Content="{l:L Key=main.duplicate}" Click="OnDuplicateClicked"
-                                        Padding="8,4" Margin="0,0,4,0" ToolTip.Tip="Ctrl+D" />
-                                <Button x:Name="RotateButton" Content="{l:L Key=main.rotate}" Click="OnRotateClicked"
-                                        Padding="8,4" Margin="0,0,4,0" ToolTip.Tip="R" />
-                                <Button Content="{l:L Key=main.delete}" Click="OnDeleteClicked"
-                                        Padding="8,4" ToolTip.Tip="Suppr" />
-                            </StackPanel>
-                            <StackPanel x:Name="SelProperties" Spacing="6" />
+                        <StackPanel VerticalAlignment="Center" Spacing="0">
+                            <TextBlock Text="ANNO 117" Classes="t-eyebrow" />
+                            <TextBlock Text="MAP TEMPLATE EDITOR"
+                                       Classes="t-display"
+                                       FontSize="18"
+                                       Foreground="{DynamicResource ConceptGold300Brush}" />
                         </StackPanel>
-                    </ScrollViewer>
+                        <TextBlock x:Name="GameTitle" Opacity="0.55"
+                                   VerticalAlignment="Center" FontSize="11"
+                                   Margin="8,0,0,0" />
+                    </StackPanel>
 
-                    <Border Grid.Row="3" BorderBrush="{DynamicResource SystemBaseLowColor}"
-                            BorderThickness="0,1,0,0" />
-
-                    <!-- Bottom: history. -->
-                    <Grid Grid.Row="4" RowDefinitions="Auto,*" Margin="16,8,16,12">
-                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto">
-                            <TextBlock Grid.Column="0" Text="{l:L Key=main.history}" FontSize="14"
-                                       FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <Button Grid.Column="1" x:Name="UndoButton" Content="{l:L Key=main.undo}"
-                                    Click="OnUndoClicked" Padding="8,2" Margin="0,0,4,0"
-                                    ToolTip.Tip="Ctrl+Z" />
-                            <Button Grid.Column="2" x:Name="RedoButton" Content="{l:L Key=main.redo}"
-                                    Click="OnRedoClicked" Padding="8,2"
-                                    ToolTip.Tip="Ctrl+Y" />
-                        </Grid>
-                        <ListBox Grid.Row="1" x:Name="HistoryList" Margin="0,8,0,0"
-                                 SelectionChanged="OnHistoryItemSelected" />
-                    </Grid>
+                    <!-- Actions du concept (header) : New / Import / Export mod / Export PNG / Doc / Support -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Center">
+                        <Button Classes="header-action" Content="✦ New Map" />
+                        <Button Classes="header-action" Content="⇣ Import from Game" />
+                        <Button x:Name="SaveModButton" Classes="header-action primary"
+                                Content="⇡ Export as Mod" Click="OnSaveModClicked"
+                                IsEnabled="False" />
+                        <Button Classes="header-action" Content="⎙ Export PNG" />
+                        <Button Classes="header-action" Content="? Documentation" />
+                        <Button Classes="header-action" Content="♥ Support" Click="OnBackToStart" />
+                    </StackPanel>
                 </Grid>
             </Border>
 
+            <!-- ============================================================
+                 [BIOME TABS] Latium / Albion / Désert(WIP) / Nordique(WIP)
+                 Sélection mutex via groupe ToggleButton (GroupName).
+                 ============================================================ -->
+            <Border Grid.Row="1" Padding="24,0"
+                    Background="{DynamicResource AnnoBgDarkerBrush}"
+                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+                    BorderThickness="0,0,0,1">
+                <StackPanel Orientation="Horizontal" Spacing="0">
+                    <RadioButton Classes="biome-tab" GroupName="Biome"
+                                 IsChecked="True" Content="LATIVM" />
+                    <RadioButton Classes="biome-tab" GroupName="Biome" Content="ALBION" />
+                    <RadioButton Classes="biome-tab" GroupName="Biome"
+                                 IsEnabled="False" Opacity="0.45" Content="DÉSERT" />
+                    <RadioButton Classes="biome-tab" GroupName="Biome"
+                                 IsEnabled="False" Opacity="0.45" Content="NORDIQUE" />
+                </StackPanel>
+            </Border>
+
+            <!-- ============================================================
+                 [BODY] 3 colonnes : Statistics · Map · Place Islands
+                 ============================================================ -->
+            <Grid Grid.Row="2" ColumnDefinitions="300,*,320" Margin="14,12,14,8">
+
+                <!-- ======================================================
+                     [COL 0] Stats panel (gauche)
+                     ====================================================== -->
+                <Border Grid.Column="0" Classes="anno-panel" Margin="0,0,8,0">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Grid.Row="0" Classes="anno-panel-header">
+                            <TextBlock Text="STATISTIQUES" Classes="t-display" FontSize="13" />
+                        </Border>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="16,12" Spacing="12">
+
+                                <!-- Map detail (titre + sous-titre) — placés ici plutôt qu'au-dessus du canvas
+                                     pour libérer la zone centrale. -->
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="CARTE COURANTE" Classes="t-eyebrow" />
+                                    <TextBlock x:Name="MapDetailTitle" FontSize="15" FontWeight="SemiBold"
+                                               Text="{l:L Key=main.select_map_hint}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock x:Name="MapDetailSubtitle" Opacity="0.65" FontSize="11"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Classes="divider-ornate" />
+
+                                <!-- Stats principales (taille / zone jouable / éléments) -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="MESURES" Classes="t-eyebrow" />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{l:L Key=main.size}" Opacity="0.7" FontSize="12" />
+                                        <TextBlock Grid.Column="1" x:Name="StatSize" Classes="t-gold"
+                                                   FontWeight="SemiBold" FontSize="12" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_area}" Opacity="0.7" FontSize="12" />
+                                        <TextBlock Grid.Column="1" x:Name="StatPlayable" Classes="t-gold"
+                                                   FontWeight="SemiBold" FontSize="12" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{l:L Key=main.elements}" Opacity="0.7" FontSize="12" />
+                                        <TextBlock Grid.Column="1" x:Name="StatElements" Classes="t-gold"
+                                                   FontWeight="SemiBold" FontSize="12" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <Border Classes="divider-ornate" />
+
+                                <!-- Difficulté (mock — branchera sur la session quand on portera Editor.jsx) -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="DIFFICULTÉ" Classes="t-eyebrow" />
+                                    <UniformGrid Columns="3">
+                                        <RadioButton Classes="size-pill" GroupName="Difficulty" Margin="0,0,4,0"
+                                                     Content="EASY" Width="68" />
+                                        <RadioButton Classes="size-pill" GroupName="Difficulty" Margin="0,0,4,0"
+                                                     Content="MEDIUM" Width="68" IsChecked="True" />
+                                        <RadioButton Classes="size-pill" GroupName="Difficulty"
+                                                     Content="HARD" Width="68" />
+                                    </UniformGrid>
+                                </StackPanel>
+
+                                <Border Classes="divider-ornate" />
+
+                                <!-- Comptes joueurs / spawns / starter (placeholders alignés sur le concept) -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="JOUEURS &amp; SPAWNS" Classes="t-eyebrow" />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Total" Opacity="0.7" FontSize="12" />
+                                        <TextBlock Grid.Column="1" Text="—" Classes="t-gold" FontWeight="SemiBold" FontSize="12" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Spawns navire" Opacity="0.7" FontSize="12" />
+                                        <TextBlock Grid.Column="1" Text="—" Classes="t-gold" FontWeight="SemiBold" FontSize="12" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Starter" Opacity="0.7" FontSize="12" />
+                                        <TextBlock Grid.Column="1" Text="—" Classes="t-gold" FontWeight="SemiBold" FontSize="12" />
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- ======================================================
+                     [COL 1] Map canvas (centre)
+                     ====================================================== -->
+                <Border Grid.Column="1" Classes="anno-panel" Margin="4,0">
+                    <Grid RowDefinitions="*">
+                        <!-- Le losange isométrique sera adapté à l'étape 4 (rotation + scale).
+                             Pour l'instant on rend le MapView tel quel sur fond parchment-stone. -->
+                        <Border Background="{DynamicResource ConceptStone200Brush}"
+                                CornerRadius="20,20,8,8" ClipToBounds="True">
+                            <c:MapView x:Name="MapRenderer" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- ======================================================
+                     [COL 2] Sidebar droite (Place Islands + Selection + View)
+                     ====================================================== -->
+                <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto" Margin="8,0,0,0">
+
+                    <!-- Place Islands : tailles + types + île personnalisée -->
+                    <Border Grid.Row="0" Classes="anno-panel" Margin="0,0,0,8">
+                        <Grid RowDefinitions="Auto,*">
+                            <Border Grid.Row="0" Classes="anno-panel-header">
+                                <TextBlock Text="PLACER UNE ÎLE" Classes="t-display" FontSize="13" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Margin="14,12" Spacing="12">
+
+                                <!-- Tailles S / M / L / XL -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="TAILLE" Classes="t-eyebrow" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="S" />
+                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="M" IsChecked="True" />
+                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="L" />
+                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="XL" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Types N / S / P / T / V / C — couleurs alignées avec ISLAND_TYPES (Editor.jsx) -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="TYPE" Classes="t-eyebrow" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <RadioButton Classes="type-chip" GroupName="IslandType"
+                                                     Background="#8A9CB0" Content="N" IsChecked="True" />
+                                        <RadioButton Classes="type-chip" GroupName="IslandType"
+                                                     Background="#C8A96A" Content="S" />
+                                        <RadioButton Classes="type-chip" GroupName="IslandType"
+                                                     Background="#A85C5C" Content="P" />
+                                        <RadioButton Classes="type-chip" GroupName="IslandType"
+                                                     Background="#9A7AB0" Content="T" />
+                                        <RadioButton Classes="type-chip" GroupName="IslandType"
+                                                     Background="#D68A3C" Content="V" />
+                                        <RadioButton Classes="type-chip" GroupName="IslandType"
+                                                     Background="#6A8A5C" Content="C" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Button Content="+ Île personnalisée…" HorizontalAlignment="Stretch"
+                                        Classes="header-action" Padding="10,8" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Selection (élément sélectionné dans le canvas).
+                         Garde les x:Name référencés par le code-behind : SelHint, ActionButtons,
+                         RotateButton, SelProperties — tous dans le même panneau, avec scroll. -->
+                    <Border Grid.Row="1" Classes="anno-panel" Margin="0,0,0,8">
+                        <Grid RowDefinitions="Auto,*">
+                            <Border Grid.Row="0" Classes="anno-panel-header">
+                                <TextBlock Text="SÉLECTION" Classes="t-display" FontSize="13" />
+                            </Border>
+                            <ScrollViewer Grid.Row="1" Padding="14,10" VerticalScrollBarVisibility="Auto">
+                                <StackPanel Spacing="10">
+                                    <TextBlock x:Name="SelHint" Opacity="0.6" FontSize="12"
+                                               Text="{l:L Key=main.no_selection_hint}"
+                                               TextWrapping="Wrap" />
+                                    <StackPanel x:Name="ActionButtons" Orientation="Horizontal"
+                                                IsVisible="False" Spacing="4">
+                                        <Button Content="{l:L Key=main.duplicate}" Click="OnDuplicateClicked"
+                                                Padding="8,4" ToolTip.Tip="Ctrl+D" />
+                                        <Button x:Name="RotateButton" Content="{l:L Key=main.rotate}"
+                                                Click="OnRotateClicked" Padding="8,4" ToolTip.Tip="R" />
+                                        <Button Content="{l:L Key=main.delete}" Click="OnDeleteClicked"
+                                                Padding="8,4" ToolTip.Tip="Suppr" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="SelProperties" Spacing="6" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <!-- View : Show island images / Reset zoom (placeholders bindés plus tard) -->
+                    <Border Grid.Row="2" Classes="anno-panel">
+                        <Grid RowDefinitions="Auto,*">
+                            <Border Grid.Row="0" Classes="anno-panel-header">
+                                <TextBlock Text="AFFICHAGE" Classes="t-display" FontSize="13" />
+                            </Border>
+                            <StackPanel Grid.Row="1" Margin="14,10" Spacing="8">
+                                <CheckBox Content="Images d'îles" IsChecked="True" />
+                                <Button Content="↺  Réinitialiser zoom" HorizontalAlignment="Stretch"
+                                        Classes="header-action" Padding="10,6" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ============================================================
+                 [FOOTER] Status + Undo/Redo
+                 ============================================================ -->
+            <Border Grid.Row="3" Padding="24,8"
+                    Background="{DynamicResource AnnoBgDarkerBrush}"
+                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+                    BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Center">
+                        <Button x:Name="UndoButton" Content="{l:L Key=main.undo}"
+                                Click="OnUndoClicked" Padding="10,4" FontSize="11"
+                                ToolTip.Tip="Ctrl+Z" />
+                        <Button x:Name="RedoButton" Content="{l:L Key=main.redo}"
+                                Click="OnRedoClicked" Padding="10,4" FontSize="11"
+                                ToolTip.Tip="Ctrl+Y" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" x:Name="StatusBar"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               FontSize="11" Opacity="0.75" />
+                    <TextBlock Grid.Column="2" Text="v0.8.1"
+                               VerticalAlignment="Center" FontSize="10" Opacity="0.45" />
+                </Grid>
+            </Border>
         </Grid>
 
-        <Border Grid.Row="2" Padding="20,8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-            <TextBlock x:Name="StatusBar" Opacity="0.7" FontSize="12" />
-        </Border>
+        <!-- ============================================================
+             [COMPATIBILITÉ] Contrôles existants conservés hors-écran.
+             Le code-behind référence ces x:Name via FindControl ; ils
+             doivent exister dans l'arbre visuel. IsVisible="False" suffit
+             pour qu'ils soient trouvés sans être rendus. À recâbler dans
+             le nouveau flux au fur et à mesure (galerie vanilla → modale,
+             session props → sidebar dédiée, elements tree → panneau
+             repliable, history → footer compact, etc.).
+             ============================================================ -->
+        <Border IsVisible="False">
+            <StackPanel>
+                <ItemsControl x:Name="DlcFilters" />
+                <TextBlock x:Name="MapsCountLabel" />
+                <TreeView x:Name="MapsList" SelectionChanged="OnMapSelected" />
+                <TreeView x:Name="ElementsTree" SelectionChanged="OnTreeSelectionChanged" />
+                <ListBox x:Name="HistoryList" SelectionChanged="OnHistoryItemSelected" />
 
+                <Border x:Name="SessionPropsPanel">
+                    <StackPanel>
+                        <TextBlock x:Name="SessionRegionLabel" />
+                        <TextBlock x:Name="SessionMapSizeLabel" />
+                        <Slider x:Name="SessionPaSlider"
+                                Minimum="64" Maximum="4096"
+                                ValueChanged="OnSessionPaSliderChanged"
+                                PointerWheelChanged="OnSessionPaSliderWheel" />
+                        <TextBlock x:Name="SessionPaSizeLabel" />
+                        <CheckBox x:Name="SessionEditPaToggle"
+                                  IsCheckedChanged="OnSessionEditPaToggleChanged" />
+                        <StackPanel x:Name="IssuesPanel" />
+                        <NumericUpDown x:Name="PaX1Box" Increment="32" />
+                        <NumericUpDown x:Name="PaY1Box" Increment="32" />
+                        <NumericUpDown x:Name="PaX2Box" Increment="32" />
+                        <NumericUpDown x:Name="PaY2Box" Increment="32" />
+                        <Button Click="OnApplyPlayableArea" />
+                        <Button Click="OnResetPlayableArea" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
