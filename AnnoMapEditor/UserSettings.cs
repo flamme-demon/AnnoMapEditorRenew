@@ -17,6 +17,12 @@ namespace AnnoMapEditor
         public string? Xpath { get; set; }
         public bool Quickstart { get; set; }
 
+        /// <summary>Si true, on bypasse StartWindow vers MainWindow dès que
+        /// l'autodetect a trouvé un dossier d'install Anno 117 valide.
+        /// Default true — l'utilisateur peut décocher dans StartWindow ou,
+        /// plus tard, depuis le panneau Settings de MainWindow.</summary>
+        public bool AutoStart { get; set; } = true;
+
         /// <summary>CSV of DLC filter ids the user has switched OFF in the maps panel.</summary>
         public string? DisabledDlcFilters { get; set; }
 

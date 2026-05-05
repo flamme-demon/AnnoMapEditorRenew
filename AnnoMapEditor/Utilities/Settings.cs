@@ -87,6 +87,24 @@ namespace AnnoMapEditor.Utilities
             }
         }
 
+        /// <summary>Si true, StartWindow se ferme automatiquement vers MainWindow
+        /// quand l'autodetect a trouvé un dossier d'install Anno 117 valide.
+        /// Toggleable depuis StartWindow (et plus tard depuis le panneau Settings
+        /// de MainWindow). Default true.</summary>
+        public bool AutoStart
+        {
+            get => UserSettings.Default.AutoStart;
+            set
+            {
+                if (value != AutoStart)
+                {
+                    UserSettings.Default.AutoStart = value;
+                    UserSettings.Default.Save();
+                    OnPropertyChanged(nameof(AutoStart));
+                }
+            }
+        }
+
         /// <summary>
         /// CSV-encoded set of DLC filter ids the user has explicitly toggled OFF in the map list.
         /// Stored as a single string for compatibility with the legacy settings backing store.

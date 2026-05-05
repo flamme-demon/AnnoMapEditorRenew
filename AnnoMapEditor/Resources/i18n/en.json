@@ -13,6 +13,8 @@
   "start.status": "Status",
   "start.quit": "Quit",
   "start.continue": "Continue →",
+  "start.autostart": "Auto-start",
+  "start.autostart_help": "Skip this screen when the game is detected",
 
   "main.save_mod": "💾 Save as mod",
   "main.back_to_start": "← Change game",

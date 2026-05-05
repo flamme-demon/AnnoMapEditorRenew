@@ -97,6 +97,23 @@
                                FontSize="12" />
                 </StackPanel>
             </Border>
+
+            <!-- Préférence : démarrage automatique. Lié à Settings.Instance.AutoStart
+                 — quand coché, StartWindow se ferme dès que l'autodetect a trouvé un
+                 dossier d'install valide. À l'avenir on déplacera ce toggle dans le
+                 panneau Settings de MainWindow. -->
+            <CheckBox x:Name="AutoStartCheckBox"
+                      IsCheckedChanged="OnAutoStartToggled"
+                      HorizontalAlignment="Center">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="{l:L Key=start.autostart}"
+                               Foreground="{DynamicResource ConceptTextBrush}"
+                               FontSize="12" />
+                    <TextBlock Text="{l:L Key=start.autostart_help}"
+                               Foreground="{DynamicResource ConceptTextMuteBrush}"
+                               FontSize="10" />
+                </StackPanel>
+            </CheckBox>
         </StackPanel>
 
         <!-- ── Footer ── -->

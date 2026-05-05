@@ -37,16 +37,24 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (versionLabel != null)
                 versionLabel.Text = AppInfo.ShortVersionLabel;
 
-            // Auto-bypass : si l'autodetect a trouvé un dossier d'install Anno
-            // 117 valide, on enchaîne automatiquement sur MainWindow sans que
-            // l'utilisateur ait à cliquer "Continuer". La fenêtre Start est
-            // brièvement visible (1 frame) le temps de l'init DataManager.
-            // Si l'init échoue (path obsolète, mod corrompu...) on reste sur
-            // StartWindow et l'utilisateur peut corriger manuellement.
+            // Reflect Settings.AutoStart in the bypass toggle. We sync once at init
+            // (won't re-fire OnAutoStartToggled because IsChecked == previous value).
+            var autoStart = this.FindControl<CheckBox>("AutoStartCheckBox");
+            if (autoStart != null)
+                autoStart.IsChecked = Settings.Instance.AutoStart;
+
+            // Auto-bypass : si Settings.AutoStart=true (default) ET l'autodetect a
+            // trouvé un dossier d'install Anno 117 valide, on enchaîne
+            // automatiquement sur MainWindow sans que l'utilisateur ait à cliquer
+            // "Continuer". La fenêtre Start clignote brièvement le temps de
+            // l'init DataManager. Si l'init échoue ou si AutoStart=false, on
+            // reste sur StartWindow.
             Opened += async (_, _) =>
             {
                 if (_autoStartAttempted) return;
                 _autoStartAttempted = true;
+
+                if (!Settings.Instance.AutoStart) return;
 
                 string? gamePath = Settings.Instance.GamePath;
                 if (string.IsNullOrWhiteSpace(gamePath) || !Directory.Exists(gamePath)) return;
@@ -74,6 +82,12 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         {
             if (sender is ComboBox combo)
                 Localizer.Current.Language = combo.SelectedIndex == 1 ? "fr" : "en";
+        }
+
+        private void OnAutoStartToggled(object? sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox cb && cb.IsChecked is bool value)
+                Settings.Instance.AutoStart = value;
         }
 
         private async void OnBrowseClicked(object? sender, RoutedEventArgs e)
