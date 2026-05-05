@@ -1,8 +1,8 @@
 {
-  "app.title": "Anno Map Editor",
-  "app.title_setup": "Anno Map Editor — Setup",
+  "app.title": "Anno 117 Map Editor",
+  "app.title_setup": "Anno 117 Map Editor — Setup",
   "app.tagline": "Community Map Editor",
-  "app.tagline_sub": "for Anno 1800 and 117 (Pax Romana)",
+  "app.tagline_sub": "for Anno 117 (Pax Romana)",
   "app.footer": "net10.0 · Avalonia 11 · native Linux/Windows/macOS",
   "app.version_prefix": "Build",
 

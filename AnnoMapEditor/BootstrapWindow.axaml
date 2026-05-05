@@ -1,14 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AnnoMapEditor.BootstrapWindow"
-        Title="Community Map Editor — migration Avalonia en cours"
+        Title="Anno 117 Map Editor"
         Width="640" Height="360"
         WindowStartupLocation="CenterScreen">
     <Grid RowDefinitions="*,Auto" Margin="32">
         <StackPanel VerticalAlignment="Center" Spacing="12">
-            <TextBlock Text="AnnoMapEditor"
+            <TextBlock Text="Anno 117 Map Editor"
                        FontSize="28" FontWeight="SemiBold" />
-            <TextBlock Text="Community Map Editor — for Anno 1800 and 117"
+            <TextBlock Text="Community Map Editor — for Anno 117 (Pax Romana)"
                        Opacity="0.8" />
             <Border BorderThickness="1" CornerRadius="6"
                     BorderBrush="{DynamicResource SystemAccentColor}"

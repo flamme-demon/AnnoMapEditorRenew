@@ -116,34 +116,71 @@ namespace AnnoMapEditor.Utilities
         private Settings()
         {
             if (GamePath == null)
-                GamePath = GetInstallDirFromRegistry();
+                GamePath = AutoDetectGamePath();
         }
 
 
-        public static string? GetInstallDirFromRegistry()
+        /// <summary>
+        /// Tente de localiser le dossier d'install d'Anno 117 — Pax Romana.
+        /// Ordre des candidats :
+        ///   1. Registre Ubisoft Connect (Windows)
+        ///   2. Chemins Steam Proton classiques (Linux)
+        ///   3. Chemins Ubisoft Connect par défaut (Windows)
+        ///   4. Chemins Steam classiques (Linux natif)
+        /// Retourne le premier chemin existant qui contient le sous-dossier `maindata`.
+        /// </summary>
+        public static string? AutoDetectGamePath()
         {
-            if (!System.OperatingSystem.IsWindows())
-                return null;
+            foreach (string candidate in EnumerateGamePathCandidates())
+            {
+                if (string.IsNullOrEmpty(candidate)) continue;
+                if (Directory.Exists(Path.Combine(candidate, "maindata")))
+                    return NormalizeSeparators(candidate);
+            }
+            return null;
+        }
 
-            return ReadAnnoInstallDirWindows();
+        private static System.Collections.Generic.IEnumerable<string> EnumerateGamePathCandidates()
+        {
+            // 1. Windows : registre Ubisoft Connect (clés Anno 117 puis fallback Anno 1800
+            //    pour les utilisateurs qui ont les deux jeux et veulent juste l'editor)
+            if (System.OperatingSystem.IsWindows())
+            {
+                string? registryPath = ReadUbisoftRegistry(@"SOFTWARE\WOW6432Node\Ubisoft\Anno 117 - Pax Romana");
+                if (registryPath != null) yield return registryPath;
+            }
+
+            // 2. Linux : Steam + Proton (Anno 117 AppID = 2980876963)
+            string? home = System.Environment.GetEnvironmentVariable("HOME");
+            if (!string.IsNullOrEmpty(home))
+            {
+                yield return Path.Combine(home,
+                    ".local/share/Steam/steamapps/compatdata/2980876963/pfx/drive_c/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/games/Anno 117 - Pax Romana");
+                yield return Path.Combine(home,
+                    ".steam/steam/steamapps/compatdata/2980876963/pfx/drive_c/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/games/Anno 117 - Pax Romana");
+            }
+
+            // 3. Windows : chemins par défaut Ubisoft Connect
+            if (System.OperatingSystem.IsWindows())
+            {
+                yield return @"C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\games\Anno 117 - Pax Romana";
+                yield return @"C:\Program Files\Ubisoft\Ubisoft Game Launcher\games\Anno 117 - Pax Romana";
+            }
         }
 
         [SupportedOSPlatform("windows")]
-        private static string? ReadAnnoInstallDirWindows()
+        private static string? ReadUbisoftRegistry(string installDirKey)
         {
-            string installDirKey = @"SOFTWARE\WOW6432Node\Ubisoft\Anno 1800";
             using Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(installDirKey);
+            return key?.GetValue("InstallDir") as string;
+        }
 
-            string? installDir = key?.GetValue("InstallDir") as string;
-            if (installDir == null)
-                return null;
-
-            if (!installDir.Contains(Path.DirectorySeparatorChar))
-            {
-                char wrongSeparator = Path.DirectorySeparatorChar == '/' ? '\\' : '/';
-                return installDir.Replace(wrongSeparator, Path.DirectorySeparatorChar);
-            }
-            return installDir;
+        private static string NormalizeSeparators(string path)
+        {
+            if (path.Contains(Path.DirectorySeparatorChar))
+                return path;
+            char wrongSeparator = Path.DirectorySeparatorChar == '/' ? '\\' : '/';
+            return path.Replace(wrongSeparator, Path.DirectorySeparatorChar);
         }
     }
 }
