@@ -30,9 +30,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 var autoStart = this.FindControl<CheckBox>("AutoStartCheckBox");
                 if (autoStart != null) autoStart.IsChecked = Settings.Instance.AutoStart;
 
-                var expertMode = this.FindControl<CheckBox>("ExpertModeCheckBox");
-                if (expertMode != null) expertMode.IsChecked = Settings.Instance.EnableExpertMode;
-
                 var gamePath = this.FindControl<TextBox>("GamePathBox");
                 if (gamePath != null)
                 {
@@ -63,13 +60,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (_suppressEvents) return;
             if (sender is CheckBox cb && cb.IsChecked is bool value)
                 Settings.Instance.AutoStart = value;
-        }
-
-        private void OnExpertModeToggled(object? sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (sender is CheckBox cb && cb.IsChecked is bool value)
-                Settings.Instance.EnableExpertMode = value;
         }
 
         private void OnLanguageChanged(object? sender, SelectionChangedEventArgs e)

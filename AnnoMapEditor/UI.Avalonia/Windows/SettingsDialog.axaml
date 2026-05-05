@@ -3,7 +3,7 @@
         xmlns:l="using:AnnoMapEditor.Utilities"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.SettingsDialog"
         Title="{l:L Key=settings.title}"
-        Width="520" Height="640"
+        Width="520" Height="500"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="{DynamicResource ConceptInk900Brush}"
@@ -68,39 +68,24 @@
 
             <Border Classes="divider-ornate" />
 
-            <!-- ── Avancé ── -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="AVANCÉ" Classes="t-eyebrow" />
-
-                <CheckBox x:Name="ExpertModeCheckBox"
-                          IsCheckedChanged="OnExpertModeToggled"
-                          Foreground="{DynamicResource ConceptTextBrush}">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="Mode expert" FontSize="13" />
-                        <TextBlock Text="Active les overrides de chemins (data, mods)."
-                                   Foreground="{DynamicResource ConceptTextMuteBrush}"
-                                   FontSize="11" />
-                    </StackPanel>
-                </CheckBox>
-
-                <StackPanel Spacing="6">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Grid.Column="0" Text="DOSSIER DU JEU" Classes="t-eyebrow"
-                                   VerticalAlignment="Center" />
-                        <Button Grid.Column="1" Classes="btn ghost sm"
-                                Content="Parcourir…" Click="OnBrowseClicked" />
-                    </Grid>
-                    <!-- TextBox éditable. Width plafonné explicitement à 420 (= 520
-                         Window - 32*2 padding - quelques pixels d'air) pour éviter le
-                         débordement à droite : Avalonia n'impose pas la contrainte de
-                         largeur du parent au TextBox quand son contenu (path long) est
-                         plus large que MinWidth. -->
-                    <TextBox x:Name="GamePathBox" Classes="input"
-                             TextWrapping="Wrap" AcceptsReturn="False"
-                             Height="64" MaxWidth="420"
-                             FontFamily="{StaticResource MonoFont}" FontSize="11"
-                             VerticalContentAlignment="Top" />
-                </StackPanel>
+            <!-- ── Dossier du jeu ── -->
+            <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="DOSSIER DU JEU" Classes="t-eyebrow"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Classes="btn ghost sm"
+                            Content="Parcourir…" Click="OnBrowseClicked" />
+                </Grid>
+                <!-- TextBox éditable. Width plafonné explicitement à 420 (= 520
+                     Window - 32*2 padding - quelques pixels d'air) pour éviter le
+                     débordement à droite : Avalonia n'impose pas la contrainte de
+                     largeur du parent au TextBox quand son contenu (path long) est
+                     plus large que MinWidth. -->
+                <TextBox x:Name="GamePathBox" Classes="input"
+                         TextWrapping="Wrap" AcceptsReturn="False"
+                         Height="64" MaxWidth="420"
+                         FontFamily="{StaticResource MonoFont}" FontSize="11"
+                         VerticalContentAlignment="Top" />
             </StackPanel>
         </StackPanel>
         </ScrollViewer>
