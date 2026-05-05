@@ -83,18 +83,18 @@ namespace AnnoMapEditor.DataArchives
             UpdateStatus(isInitializing: true, isInitialized: false);
             _logger.LogInformation($"Initializing DataManager at '{dataPath}'.");
 
+            // Anno 117 only — `dataPath` doit contenir le nom du dossier d'install.
             DetectedGame = null;
-            foreach (var supportedGame in Game.SupportedGames)
+            var anno117 = Game.Anno117;
+            if (dataPath.Contains(anno117.Path))
             {
-                if (!dataPath.Contains(supportedGame.Path)) continue;
-                DetectedGame = supportedGame;
-                _logger.LogInformation($"Found Game '{supportedGame.Title}'.");
-                break;
+                DetectedGame = anno117;
+                _logger.LogInformation($"Found Game '{anno117.Title}'.");
             }
 
             try
             {
-                if (DetectedGame == null || DetectedGame == Game.UnsupportedAnno)
+                if (DetectedGame == null)
                     throw new Exception("Selected game is not supported.");
 
                 DataArchiveFactory dataArchiveFactory = new();

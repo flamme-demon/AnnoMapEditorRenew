@@ -253,13 +253,6 @@ namespace AnnoMapEditor.MapTemplates.Models
                 if (_templateDocument.MapTemplate.EnlargementOffset is null)
                     _templateDocument.MapTemplate.EnlargementOffset = new[] { 0, 0 };
             }
-            else if (Session == Anno1800StaticAssets.NewWorldSession)
-            {
-                _templateDocument.MapTemplate.InitialPlayableArea =
-                    _templateDocument.MapTemplate.PlayableArea;
-                _templateDocument.MapTemplate.IsEnlargedTemplate = null;
-                _templateDocument.MapTemplate.EnlargementOffset = null;
-            }
             else
             {
                 _templateDocument.MapTemplate.InitialPlayableArea = null;
