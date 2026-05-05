@@ -321,51 +321,57 @@
                     <Grid Width="640" Height="640" HorizontalAlignment="Center" VerticalAlignment="Center">
 
                         <!-- ──────────────────────────────────────────────────────
-                             Le losange : carré 453x453 tourné -45°, border gold-700,
-                             fond #1f2d48 (Editor.jsx 612-639). Cadre PUREMENT
-                             décoratif — le rendu réel des îles est posé par-dessus
-                             en carré droit (cf bloc MapView ci-dessous).
-                             ────────────────────────────────────────────────────── -->
-                        <Border Width="453" Height="453"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Background="#1f2d48"
-                                BorderBrush="{DynamicResource ConceptGold700Brush}"
-                                BorderThickness="2"
-                                BoxShadow="0 20 60 0 #99000000"
-                                RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform>
-                                <RotateTransform Angle="-45" />
-                            </Border.RenderTransform>
+                             Le losange EST la map (vue isométrique Anno).
+                             Carré 453x453 tourné -45°, border gold-700, et le
+                             MapView est posé DEDANS — son contenu suit la
+                             rotation, donc on voit la map en losange comme dans
+                             le jeu. Le bouton "◇ Vue jeu" du MapView permet de
+                             basculer entre la vue plate (contre-rotation +45°
+                             du contenu) et la vue isométrique (orientation native
+                             du jeu).
 
-                            <!-- Liseré violet inset (Editor.jsx 626-630) -->
-                            <Border Margin="6"
-                                    BorderBrush="#8a4ca8"
-                                    BorderThickness="1"
-                                    Opacity="0.6">
-                                <!-- Grille isométrique 5×5 (Editor.jsx 632-639). 8 traits
-                                     gold-blue subtle. Path Stretch="Fill" pour qu'elle
-                                     s'adapte à la taille du losange. -->
-                                <Border Margin="6">
-                                    <Path Stroke="#5a7290" StrokeThickness="0.5" Opacity="0.3"
-                                          Stretch="Fill"
-                                          Data="M 0,2 L 10,2  M 0,4 L 10,4  M 0,6 L 10,6  M 0,8 L 10,8
-                                                M 2,0 L 2,10  M 4,0 L 4,10  M 6,0 L 6,10  M 8,0 L 8,10" />
+                             On utilise LayoutTransformControl plutôt que
+                             RenderTransform sur le Border : LayoutTransform
+                             recalcule la layout box en tenant compte de la
+                             rotation, donc le losange est correctement centré
+                             dans son wrapper.
+                             ────────────────────────────────────────────────────── -->
+                        <LayoutTransformControl HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <LayoutTransformControl.LayoutTransform>
+                                <RotateTransform Angle="-45" />
+                            </LayoutTransformControl.LayoutTransform>
+                            <Border Width="453" Height="453"
+                                    Background="#1f2d48"
+                                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+                                    BorderThickness="2"
+                                    BoxShadow="0 20 60 0 #99000000"
+                                    ClipToBounds="True">
+
+                                <!-- Liseré violet inset (Editor.jsx 626-630) -->
+                                <Border Margin="6"
+                                        BorderBrush="#8a4ca8"
+                                        BorderThickness="1"
+                                        Opacity="0.6">
+                                    <Grid>
+                                        <!-- Grille isométrique 5×5 en arrière-plan
+                                             (Editor.jsx 632-639). Visible quand le
+                                             MapView est vide / aucune carte chargée. -->
+                                        <Border Margin="6">
+                                            <Path Stroke="#5a7290" StrokeThickness="0.5" Opacity="0.3"
+                                                  Stretch="Fill"
+                                                  Data="M 0,2 L 10,2  M 0,4 L 10,4  M 0,6 L 10,6  M 0,8 L 10,8
+                                                        M 2,0 L 2,10  M 4,0 L 4,10  M 6,0 L 6,10  M 8,0 L 8,10" />
+                                        </Border>
+
+                                        <!-- MapView : rendu BBDom des îles, prend toute la
+                                             zone interne du losange. La rotation -45° du
+                                             LayoutTransformControl parent l'oriente comme
+                                             dans le jeu. -->
+                                        <c:MapView x:Name="MapRenderer" />
+                                    </Grid>
                                 </Border>
                             </Border>
-                        </Border>
-
-                        <!-- ──────────────────────────────────────────────────────
-                             MapView (rendu BBDom des îles) posé DROIT au centre du
-                             losange. Carré inscrit dans le losange : taille
-                             ≈ 453/√2 ≈ 320, qu'on arrondit à 312 pour laisser un
-                             peu d'air avec les liserés. ClipToBounds : si le rendu
-                             dépasse, c'est tronqué proprement.
-                             ────────────────────────────────────────────────────── -->
-                        <Border Width="312" Height="312"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                ClipToBounds="True">
-                            <c:MapView x:Name="MapRenderer" />
-                        </Border>
+                        </LayoutTransformControl>
 
                         <!-- Marqueurs cardinaux N/E/S/W (Editor.jsx 658-676) -->
                         <Border Width="28" Height="28" CornerRadius="14"
