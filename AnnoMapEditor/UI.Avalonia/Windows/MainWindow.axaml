@@ -305,8 +305,12 @@
                     <!-- Wrapper carré centré (taille fixe pour l'instant — concept utilise min(82%,720px)) -->
                     <Grid Width="640" Height="640" HorizontalAlignment="Center" VerticalAlignment="Center">
 
-                        <!-- Le losange : carré tourné -45°, border gold-700, bg #1f2d48
-                             (Editor.jsx 612-639) -->
+                        <!-- ──────────────────────────────────────────────────────
+                             Le losange : carré 453x453 tourné -45°, border gold-700,
+                             fond #1f2d48 (Editor.jsx 612-639). Cadre PUREMENT
+                             décoratif — le rendu réel des îles est posé par-dessus
+                             en carré droit (cf bloc MapView ci-dessous).
+                             ────────────────────────────────────────────────────── -->
                         <Border Width="453" Height="453"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Background="#1f2d48"
@@ -323,17 +327,29 @@
                                     BorderBrush="#8a4ca8"
                                     BorderThickness="1"
                                     Opacity="0.6">
-                                <!-- MapView placeholder — sera intégré quand on portera le canvas
-                                     interactif. Pour l'instant on rend le control existant à
-                                     plat dans le losange (sans rotation) — le user verra le
-                                     rendu BBDom mais penché. -->
+                                <!-- Grille isométrique 5×5 (Editor.jsx 632-639). 8 traits
+                                     gold-blue subtle. Path Stretch="Fill" pour qu'elle
+                                     s'adapte à la taille du losange. -->
                                 <Border Margin="6">
-                                    <!-- MapView placé dans le losange (suit la rotation -45° du
-                                         parent). Plus tard on contre-rotera ce contenu pour qu'il
-                                         soit droit, dans une étape "MapCanvas" dédiée. -->
-                                    <c:MapView x:Name="MapRenderer" />
+                                    <Path Stroke="#5a7290" StrokeThickness="0.5" Opacity="0.3"
+                                          Stretch="Fill"
+                                          Data="M 0,2 L 10,2  M 0,4 L 10,4  M 0,6 L 10,6  M 0,8 L 10,8
+                                                M 2,0 L 2,10  M 4,0 L 4,10  M 6,0 L 6,10  M 8,0 L 8,10" />
                                 </Border>
                             </Border>
+                        </Border>
+
+                        <!-- ──────────────────────────────────────────────────────
+                             MapView (rendu BBDom des îles) posé DROIT au centre du
+                             losange. Carré inscrit dans le losange : taille
+                             ≈ 453/√2 ≈ 320, qu'on arrondit à 312 pour laisser un
+                             peu d'air avec les liserés. ClipToBounds : si le rendu
+                             dépasse, c'est tronqué proprement.
+                             ────────────────────────────────────────────────────── -->
+                        <Border Width="312" Height="312"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                ClipToBounds="True">
+                            <c:MapView x:Name="MapRenderer" />
                         </Border>
 
                         <!-- Marqueurs cardinaux N/E/S/W (Editor.jsx 658-676) -->
