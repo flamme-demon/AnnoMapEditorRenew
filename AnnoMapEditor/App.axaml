@@ -9,33 +9,104 @@
                  string after '#' is the font's internal Family Name. -->
             <FontFamily x:Key="MaterialIcons">avares://AnnoMapEditor/Assets/fonts#Material Icons</FontFamily>
 
-            <!-- Concept fonts (mod-creator design): Cinzel for Roman display
-                 titles, Inter (already provided by Avalonia.Fonts.Inter) for body. -->
+            <!-- ============================================================
+                 ANNO 117 CONCEPT — DESIGN TOKENS
+                 Tirés littéralement de `AnnoMap Design/styles/tokens.css`.
+                 Naming : `Concept[Famille][Niveau]` ; chaque couleur a aussi
+                 un brush solid prêt à binder en DynamicResource.
+                 Palette dark-only — la zone `Stone*` parchemin reste claire
+                 (utilisée pour la zone carte uniquement).
+                 ============================================================ -->
+
+            <!-- Polices -->
             <FontFamily x:Key="DisplayFont">avares://AnnoMapEditor/Assets/fonts#Cinzel</FontFamily>
             <FontFamily x:Key="BodyFont">Inter, $Default</FontFamily>
+            <FontFamily x:Key="MonoFont">avares://AnnoMapEditor/Assets/fonts#JetBrains Mono</FontFamily>
 
-            <!-- Concept palette: pale gold (filets, eyebrows, accents) and
-                 parchment-stone (map canvas surface). Independent of Light/Dark
-                 since they're decorative accents that read on both. -->
-            <Color x:Key="ConceptGold300">#E8D6A8</Color>
-            <Color x:Key="ConceptGold400">#D8BF83</Color>
-            <Color x:Key="ConceptGold500">#C8A96A</Color>
-            <Color x:Key="ConceptGold600">#A88A52</Color>
-            <Color x:Key="ConceptGold700">#8A7240</Color>
+            <!-- ── Ink (chrome principal — surfaces sombres) ── -->
+            <Color x:Key="ConceptInk950">#0d1626</Color>
+            <Color x:Key="ConceptInk900">#14213a</Color>
+            <Color x:Key="ConceptInk800">#1a2840</Color>
+            <Color x:Key="ConceptInk700">#243454</Color>
+            <Color x:Key="ConceptInk600">#324466</Color>
+            <Color x:Key="ConceptInk500">#4a5e82</Color>
 
-            <SolidColorBrush x:Key="ConceptGold300Brush" Color="{StaticResource ConceptGold300}" />
-            <SolidColorBrush x:Key="ConceptGold400Brush" Color="{StaticResource ConceptGold400}" />
-            <SolidColorBrush x:Key="ConceptGold500Brush" Color="{StaticResource ConceptGold500}" />
-            <SolidColorBrush x:Key="ConceptGold600Brush" Color="{StaticResource ConceptGold600}" />
+            <SolidColorBrush x:Key="ConceptInk950Brush" Color="{StaticResource ConceptInk950}" />
+            <SolidColorBrush x:Key="ConceptInk900Brush" Color="{StaticResource ConceptInk900}" />
+            <SolidColorBrush x:Key="ConceptInk800Brush" Color="{StaticResource ConceptInk800}" />
+            <SolidColorBrush x:Key="ConceptInk700Brush" Color="{StaticResource ConceptInk700}" />
+            <SolidColorBrush x:Key="ConceptInk600Brush" Color="{StaticResource ConceptInk600}" />
+            <SolidColorBrush x:Key="ConceptInk500Brush" Color="{StaticResource ConceptInk500}" />
+
+            <!-- ── Wine (accent primaire — bordeaux pourpre) ── -->
+            <Color x:Key="ConceptWine900">#4a1620</Color>
+            <Color x:Key="ConceptWine800">#5e1f2c</Color>
+            <Color x:Key="ConceptWine700">#7a2838</Color>
+            <Color x:Key="ConceptWine600">#963747</Color>
+            <Color x:Key="ConceptWine500">#b85365</Color>
+
+            <SolidColorBrush x:Key="ConceptWine900Brush" Color="{StaticResource ConceptWine900}" />
+            <SolidColorBrush x:Key="ConceptWine800Brush" Color="{StaticResource ConceptWine800}" />
+            <SolidColorBrush x:Key="ConceptWine700Brush" Color="{StaticResource ConceptWine700}" />
+            <SolidColorBrush x:Key="ConceptWine600Brush" Color="{StaticResource ConceptWine600}" />
+            <SolidColorBrush x:Key="ConceptWine500Brush" Color="{StaticResource ConceptWine500}" />
+
+            <!-- ── Gold (filets, bordures, texte fin) ── -->
+            <Color x:Key="ConceptGold700">#8a7240</Color>
+            <Color x:Key="ConceptGold600">#a88a52</Color>
+            <Color x:Key="ConceptGold500">#c8a96a</Color>
+            <Color x:Key="ConceptGold400">#d8bf83</Color>
+            <Color x:Key="ConceptGold300">#e8d6a8</Color>
+
             <SolidColorBrush x:Key="ConceptGold700Brush" Color="{StaticResource ConceptGold700}" />
+            <SolidColorBrush x:Key="ConceptGold600Brush" Color="{StaticResource ConceptGold600}" />
+            <SolidColorBrush x:Key="ConceptGold500Brush" Color="{StaticResource ConceptGold500}" />
+            <SolidColorBrush x:Key="ConceptGold400Brush" Color="{StaticResource ConceptGold400}" />
+            <SolidColorBrush x:Key="ConceptGold300Brush" Color="{StaticResource ConceptGold300}" />
 
-            <Color x:Key="ConceptStone100">#F0E8D8</Color>
-            <Color x:Key="ConceptStone200">#E0D4BE</Color>
-            <Color x:Key="ConceptStone300">#C8B89C</Color>
+            <!-- ── Stone (parchemin / pierre — uniquement zone carte) ── -->
+            <Color x:Key="ConceptStone100">#f0e8d8</Color>
+            <Color x:Key="ConceptStone200">#e0d4be</Color>
+            <Color x:Key="ConceptStone300">#c8b89c</Color>
+            <Color x:Key="ConceptStone400">#a89878</Color>
+            <Color x:Key="ConceptStone500">#877657</Color>
 
             <SolidColorBrush x:Key="ConceptStone100Brush" Color="{StaticResource ConceptStone100}" />
             <SolidColorBrush x:Key="ConceptStone200Brush" Color="{StaticResource ConceptStone200}" />
             <SolidColorBrush x:Key="ConceptStone300Brush" Color="{StaticResource ConceptStone300}" />
+            <SolidColorBrush x:Key="ConceptStone400Brush" Color="{StaticResource ConceptStone400}" />
+            <SolidColorBrush x:Key="ConceptStone500Brush" Color="{StaticResource ConceptStone500}" />
+
+            <!-- ── Texte ── -->
+            <Color x:Key="ConceptText">#e8e2d0</Color>
+            <Color x:Key="ConceptTextDim">#a8a090</Color>
+            <Color x:Key="ConceptTextMute">#6e6858</Color>
+
+            <SolidColorBrush x:Key="ConceptTextBrush" Color="{StaticResource ConceptText}" />
+            <SolidColorBrush x:Key="ConceptTextDimBrush" Color="{StaticResource ConceptTextDim}" />
+            <SolidColorBrush x:Key="ConceptTextMuteBrush" Color="{StaticResource ConceptTextMute}" />
+
+            <!-- ── Border (filet doré subtil — rgba(200,169,106,0.18 / 0.42)) ── -->
+            <SolidColorBrush x:Key="ConceptBorderBrush"       Color="#c8a96a" Opacity="0.18" />
+            <SolidColorBrush x:Key="ConceptBorderStrongBrush" Color="#c8a96a" Opacity="0.42" />
+
+            <!-- ── Couleurs joueurs (zones territoriales) ── -->
+            <Color x:Key="ConceptPlayer1">#b94a4a</Color>
+            <Color x:Key="ConceptPlayer2">#3e6cb5</Color>
+            <Color x:Key="ConceptPlayer3">#4d8c4a</Color>
+            <Color x:Key="ConceptPlayer4">#d4a93b</Color>
+            <Color x:Key="ConceptPlayer5">#8a4ca8</Color>
+            <Color x:Key="ConceptPlayer6">#d68a3c</Color>
+            <Color x:Key="ConceptPlayer7">#2a2a2a</Color>
+            <Color x:Key="ConceptPlayer8">#d8d4c8</Color>
+
+            <!-- ── Couleurs types d'îles (Editor.jsx ISLAND_TYPES) ── -->
+            <Color x:Key="ConceptIslandNormal">#8a9cb0</Color>
+            <Color x:Key="ConceptIslandStarter">#c8a96a</Color>
+            <Color x:Key="ConceptIslandPirate">#a85c5c</Color>
+            <Color x:Key="ConceptIslandThirdParty">#9a7ab0</Color>
+            <Color x:Key="ConceptIslandVulkan">#d68a3c</Color>
+            <Color x:Key="ConceptIslandContinental">#6a8a5c</Color>
 
             <ResourceDictionary.ThemeDictionaries>
                 <!-- LIGHT THEME (Roman parchment) — mirrors the :root[light]
@@ -604,42 +675,40 @@
         </Style>
 
         <!-- ============================================================
-             CONCEPT (mod-creator) UTILITIES
-             Tokens & utilitaires extraits de tokens.css/components.css du
-             concept React. On ajoute par-dessus la base existante : Cinzel
-             pour les titres, eyebrow gold capitalisé, séparateur orné,
-             onglets de biome avec accent doré, et "size pills" S/M/L/XL
-             pour le panneau "Place Islands".
+             ANNO 117 CONCEPT — STYLES
+             Portage fidèle de `AnnoMap Design/styles/components.css`.
+             Dark only — utilisés uniquement dans MainWindow (l'éditeur du
+             concept). StartWindow / Bootstrap conservent les anciens
+             Anno*/Light/Dark styles.
              ============================================================ -->
 
-        <!-- Display title (Cinzel, lettrage espacé — pour les titres de section) -->
+        <!-- ── Texte (t-display, t-eyebrow, t-gold, t-dim, t-mute, t-mono) ── -->
         <Style Selector="TextBlock.t-display">
             <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
             <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="LetterSpacing" Value="1.2" />
+            <Setter Property="LetterSpacing" Value="1.5" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
         </Style>
-
-        <!-- Eyebrow: petit lettrage doré capitalisé (au-dessus d'un titre) -->
         <Style Selector="TextBlock.t-eyebrow">
             <Setter Property="FontSize" Value="10" />
             <Setter Property="LetterSpacing" Value="2.5" />
             <Setter Property="Foreground" Value="{DynamicResource ConceptGold500Brush}" />
             <Setter Property="FontWeight" Value="Medium" />
         </Style>
-
-        <!-- Texte doré pour valeurs / accents -->
         <Style Selector="TextBlock.t-gold">
             <Setter Property="Foreground" Value="{DynamicResource ConceptGold400Brush}" />
         </Style>
         <Style Selector="TextBlock.t-dim">
-            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextDimBrush}" />
         </Style>
         <Style Selector="TextBlock.t-mute">
-            <Setter Property="Opacity" Value="0.5" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextMuteBrush}" />
+        </Style>
+        <Style Selector="TextBlock.t-mono">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
         </Style>
 
-        <!-- Séparateur orné: filet doré horizontal "transparent → gold → transparent".
-             Hauteur 1px, à mettre dans un Border avec Margin vertical. -->
+        <!-- ── Séparateur orné (gold horizontal gradient) ── -->
         <Style Selector="Border.divider-ornate">
             <Setter Property="Height" Value="1" />
             <Setter Property="Margin" Value="0,8" />
@@ -652,13 +721,99 @@
             </Setter>
         </Style>
 
-        <!-- Variant "no-bullet" pour les RadioButton stylés en pill/chip/tab.
-             Avalonia Fluent dessine un cercle bullet à gauche du contenu par
-             défaut ; on remplace le Template par un simple Border + Content,
-             pour que les classes biome-tab / size-pill / type-chip lookent
-             comme un ToggleButton custom mais avec le comportement RadioButton
-             (mutex via GroupName). -->
-        <Style Selector="RadioButton.biome-tab, RadioButton.size-pill, RadioButton.type-chip">
+        <!-- ── Texture stone (parchemin pour zone carte) ── -->
+        <Style Selector="Border.tex-stone">
+            <Setter Property="Background">
+                <RadialGradientBrush Center="30%,20%" GradientOrigin="30%,20%"
+                                     RadiusX="60%" RadiusY="60%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptStone100}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptStone200}" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+
+        <!-- ── BUTTON.btn (base + .primary / .secondary / .ghost / .sm / .lg / .icon / .block)
+             Portage de components.css `.btn`+ variants ── -->
+        <Style Selector="Button.btn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.btn.primary">
+            <Setter Property="Foreground" Value="#fff5e8" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptWine900Brush}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptWine600}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptWine800}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptWine500}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptWine700}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn.primary:disabled /template/ ContentPresenter">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+        <Style Selector="Button.btn.secondary">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderBrush}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk800}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn.secondary:pointerover /template/ ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderStrongBrush}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk600}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk700}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn.ghost">
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold400Brush}" />
+            <Setter Property="Padding" Value="14,8" />
+        </Style>
+        <Style Selector="Button.btn.ghost:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#15c8a96a" />
+            <Setter Property="BorderBrush" Value="#33c8a96a" />
+        </Style>
+        <Style Selector="Button.btn.sm">
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+        <Style Selector="Button.btn.lg">
+            <Setter Property="Padding" Value="26,14" />
+            <Setter Property="FontSize" Value="15" />
+        </Style>
+        <Style Selector="Button.btn.icon">
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="MinWidth" Value="36" />
+        </Style>
+        <Style Selector="Button.btn.block">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- ── Variant "no-bullet" pour les RadioButton stylés (no Fluent bullet) ── -->
+        <Style Selector="RadioButton.biome-tab, RadioButton.size-pill, RadioButton.type-chip,
+                         RadioButton.map-tab, RadioButton.diff-pill">
             <Setter Property="Template">
                 <ControlTemplate>
                     <Border Background="{TemplateBinding Background}"
@@ -677,120 +832,118 @@
             </Setter>
         </Style>
 
-        <!-- Onglet de biome (Latium / Albion / etc.). Sélectionné → background
-             dégradé bordeaux subtil + soulignement doré bas.
-             Les selectors `ToggleButton.X` matchent aussi `RadioButton.X` car
-             RadioButton dérive de ToggleButton dans Avalonia. -->
+        <!-- ── biome-tab (Editor.jsx 488-523) — pill avec glyphe + label + count badge.
+             Inactif : ink-700 → ink-800 + border subtle. Actif : wine-700 → wine-900,
+             border gold-500, text gold-300. ── -->
         <Style Selector="ToggleButton.biome-tab">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0,0,0,2" />
-            <Setter Property="Padding" Value="20,10" />
+            <Setter Property="Padding" Value="14,6" />
             <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{DynamicResource AnnoTextMutedBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderBrush}" />
+            <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Cursor" Value="Hand" />
-        </Style>
-        <Style Selector="ToggleButton.biome-tab:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="ToggleButton.biome-tab:pointerover">
-            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
-        </Style>
-        <Style Selector="ToggleButton.biome-tab:checked">
-            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background">
                 <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
-                    <GradientStop Offset="0.0" Color="#2D7A2838" />
-                    <GradientStop Offset="1.0" Color="Transparent" />
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk800}" />
                 </LinearGradientBrush>
             </Setter>
         </Style>
-        <Style Selector="ToggleButton.biome-tab:checked /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
+        <Style Selector="ToggleButton.biome-tab:checked">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptWine700}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptWine900}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.biome-tab:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextMuteBrush}" />
         </Style>
 
-        <!-- "Size pill" pour Place Islands (S, M, L, XL).
-             Cinzel petit + fond ink avec bordure dorée subtile,
-             actif = fond bordeaux radial + texte ivoire. -->
-        <Style Selector="ToggleButton.size-pill">
-            <Setter Property="Width" Value="44" />
-            <Setter Property="Height" Value="36" />
+        <!-- ── map-tab (Editor.jsx 535-552) — carré 32x28 numéroté avec dot status ── -->
+        <Style Selector="ToggleButton.map-tab">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="28" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextDimBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ConceptInk700Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Background" Value="{DynamicResource AnnoBgDarkerBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource ConceptGold400Brush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Cursor" Value="Hand" />
         </Style>
-        <Style Selector="ToggleButton.size-pill:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
+        <Style Selector="ToggleButton.map-tab:checked">
+            <Setter Property="Background" Value="{DynamicResource ConceptWine800Brush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
-        </Style>
-        <Style Selector="ToggleButton.size-pill:checked /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
-            <Setter Property="TextBlock.Foreground" Value="#FFE8DA" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
         </Style>
 
-        <!-- "Type chip" pour Place Islands (N, S, P, T, V, C). Plus petit qu'un
-             size-pill, carré et coloré selon le type d'île. La couleur du type
-             est appliquée via Background inline dans le XAML d'utilisation. -->
-        <Style Selector="ToggleButton.type-chip">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="#F0E8D8" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
+        <!-- ── place-btn (Editor.jsx PlaceBtn 215-234) — boutons rangée Place Islands ── -->
+        <Style Selector="Button.place-btn">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptTextBrush}" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
             <Setter Property="CornerRadius" Value="3" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="MinWidth" Value="36" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk800}" />
+                </LinearGradientBrush>
+            </Setter>
         </Style>
-        <Style Selector="ToggleButton.type-chip:pointerover">
-            <Setter Property="Opacity" Value="1.0" />
-        </Style>
-        <Style Selector="ToggleButton.type-chip:checked">
-            <Setter Property="Opacity" Value="1.0" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold400Brush}" />
-            <Setter Property="BorderThickness" Value="2" />
+        <Style Selector="Button.place-btn.filled">
+            <Setter Property="Foreground" Value="#fff" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="{StaticResource ConceptWine600}" />
+                    <GradientStop Offset="1.0" Color="{StaticResource ConceptWine800}" />
+                </LinearGradientBrush>
+            </Setter>
         </Style>
 
-        <!-- Header bar buttons (sub-style of accent for the New Map / Import / Export
-             actions in the top bar). Hérite du look "accent" mais plus compact. -->
-        <Style Selector="Button.header-action">
-            <Setter Property="Background" Value="{DynamicResource AnnoBgLighterBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold700Brush}" />
+        <!-- ── Modale (components.css .modal-backdrop / .modal / .modal-title) ── -->
+        <Style Selector="Border.modal-backdrop">
+            <Setter Property="Background" Value="#C70d1626" />
+        </Style>
+        <Style Selector="Border.modal">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderStrongBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="12,7" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="MaxWidth" Value="480" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #8C000000" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Offset="0.0" Color="#99243454" />
+                    <GradientStop Offset="1.0" Color="#F214213a" />
+                </LinearGradientBrush>
+            </Setter>
         </Style>
-        <Style Selector="Button.header-action:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AnnoBgBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
-            <Setter Property="TextBlock.Foreground" Value="{DynamicResource ConceptGold300Brush}" />
-        </Style>
-        <Style Selector="Button.header-action.primary">
-            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
-            <Setter Property="Foreground" Value="#FFE8DA" />
-        </Style>
-        <Style Selector="Button.header-action.primary:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AnnoButtonBgActive}" />
-            <Setter Property="TextBlock.Foreground" Value="#FFFFFF" />
+        <Style Selector="TextBlock.modal-title">
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="LetterSpacing" Value="2" />
+            <Setter Property="Foreground" Value="{DynamicResource ConceptGold300Brush}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
     </Application.Styles>
 </Application>

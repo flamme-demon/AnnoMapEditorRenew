@@ -6,329 +6,633 @@
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.MainWindow"
         Title="{l:L Key=app.title}"
         Width="1440" Height="900"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ConceptInk900Brush}"
+        Foreground="{DynamicResource ConceptTextBrush}">
 
-    <!-- Layout aligné sur le concept "Anno Mod Creator" :
-           [Header]              titre + 6 actions (New / Import / Export mod / Export PNG / Doc / Support)
-           [Biome tabs]          onglets Latium / Albion / Désert(WIP) / Nordique(WIP)
-           [Body 3 colonnes]     Statistics (gauche) · Map canvas (centre) · Place islands+Selection+View (droite)
-           [Footer]              Status + Undo/Redo
-
-         Le bandeau de menu Anno-style (menu-root, dome tabs, etc.) du précédent prototype n'est
-         plus présent : le concept React l'a remplacé par un header simple + footer minimal.
-
-         Tous les x:Name référencés par MainWindow.axaml.cs sont préservés. Ceux qui ne font
-         pas partie du nouveau concept (galerie vanilla, SessionPropsPanel, ElementsTree…)
-         sont conservés en compatibilité dans un Border IsVisible="False" en bas du Grid root —
-         leur logique est intacte mais hors-écran tant qu'on ne les recâble pas dans le nouveau flux. -->
+    <!-- =====================================================================
+         Anno 117 Map Template Editor — port fidèle de
+         `AnnoMap Design/src/Editor.jsx` (lang=fr).
+         Layout vertical : Header / Biome bar / Body 3 colonnes.
+         Tous les x:Name référencés par le code-behind sont préservés ; ceux
+         qui n'apparaissent pas dans le concept sont conservés dans un
+         Border IsVisible="False" en bas du Grid pour ne pas casser le .cs.
+         ===================================================================== -->
 
     <Grid>
-        <!-- Texture grain de papier (héritée du précédent layout, donne le rendu parchemin) -->
-        <Border IsHitTestVisible="False" Opacity="0.5">
-            <Border.Background>
-                <ImageBrush Source="avares://AnnoMapEditor/Assets/textures/noise_grain.png"
-                            TileMode="Tile" Stretch="None"
-                            DestinationRect="0,0,256,256" />
-            </Border.Background>
-        </Border>
+        <Grid RowDefinitions="Auto,Auto,*">
 
-        <Grid RowDefinitions="Auto,Auto,*,Auto">
-
-            <!-- ============================================================
-                 [HEADER] Titre + barre d'actions globales
-                 ============================================================ -->
-            <Border Grid.Row="0" Padding="24,14"
-                    Background="{DynamicResource AnnoHeaderGradient}"
-                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+            <!-- =================================================================
+                 [HEADER] Editor.jsx 430-477 — logo + title + status pill + actions
+                 ================================================================= -->
+            <Border Grid.Row="0"
+                    Padding="16,8"
+                    BorderBrush="{DynamicResource ConceptBorderBrush}"
                     BorderThickness="0,0,0,1">
-                <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                        <GradientStop Offset="0.0" Color="{StaticResource ConceptInk800}" />
+                        <GradientStop Offset="1.0" Color="{StaticResource ConceptInk900}" />
+                    </LinearGradientBrush>
+                </Border.Background>
 
-                    <!-- Branding : Cinzel + filet doré sous le titre -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14"
-                                VerticalAlignment="Center">
-                        <Border Width="36" Height="36"
-                                CornerRadius="18"
-                                Background="{DynamicResource AnnoButtonBgActive}"
-                                BorderBrush="{DynamicResource ConceptGold500Brush}"
-                                BorderThickness="1">
-                            <TextBlock Text="A" FontFamily="{StaticResource DisplayFont}"
-                                       FontSize="20" FontWeight="Bold" Foreground="#FFE8DA"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel VerticalAlignment="Center" Spacing="0">
-                            <TextBlock Text="ANNO 117" Classes="t-eyebrow" />
-                            <TextBlock Text="MAP TEMPLATE EDITOR"
-                                       Classes="t-display"
-                                       FontSize="18"
-                                       Foreground="{DynamicResource ConceptGold300Brush}" />
-                        </StackPanel>
-                        <TextBlock x:Name="GameTitle" Opacity="0.55"
-                                   VerticalAlignment="Center" FontSize="11"
-                                   Margin="8,0,0,0" />
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto,*,Auto" VerticalAlignment="Center">
+
+                    <!-- Logo SVG (Editor.jsx Logo : losange orné, gold-500) -->
+                    <Canvas Grid.Column="0" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.4"
+                              Data="M 12 2.25 L 21.75 12 L 12 21.75 L 2.25 12 Z" />
+                        <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.4" Opacity="0.55"
+                              Data="M 12 6 L 18 12 L 12 18 L 6 12 Z" />
+                        <Ellipse Canvas.Left="10.5" Canvas.Top="10.5" Width="3" Height="3"
+                                 Fill="{DynamicResource ConceptGold500Brush}" />
+                    </Canvas>
+
+                    <!-- Bloc titre : eyebrow + display title -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="ANNO 117" Classes="t-display"
+                                   FontSize="12" Foreground="{DynamicResource ConceptGold300Brush}"
+                                   LetterSpacing="2" />
+                        <TextBlock x:Name="GameTitle" Text="Anno Mod Creator"
+                                   Classes="t-mute" FontSize="9" LetterSpacing="1.6" />
                     </StackPanel>
 
-                    <!-- Actions du concept (header) : New / Import / Export mod / Export PNG / Doc / Support -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                    <!-- Status pill central (DiamondOrnament + texte) -->
+                    <Border Grid.Column="3"
+                            Padding="14,5"
+                            CornerRadius="999"
+                            Background="{DynamicResource ConceptInk950Brush}"
+                            BorderBrush="{DynamicResource ConceptBorderBrush}"
+                            BorderThickness="1"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Canvas Width="8" Height="8" VerticalAlignment="Center">
+                                <Path Stroke="{DynamicResource ConceptGold700Brush}" StrokeThickness="1"
+                                      Data="M 4 0.6 L 7.4 4 L 4 7.4 L 0.6 4 Z" />
+                                <Ellipse Canvas.Left="2.8" Canvas.Top="2.8" Width="2.4" Height="2.4"
+                                         Fill="{DynamicResource ConceptGold700Brush}" />
+                            </Canvas>
+                            <TextBlock x:Name="StatusBar"
+                                       Text="3 cartes requises par biome"
+                                       Foreground="{DynamicResource ConceptTextDimBrush}"
+                                       FontSize="10" LetterSpacing="0.6"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Actions à droite (Editor.jsx 463-476) -->
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6"
                                 VerticalAlignment="Center">
-                        <Button Classes="header-action" Content="✦ New Map" />
-                        <Button Classes="header-action" Content="⇣ Import from Game" />
-                        <Button x:Name="SaveModButton" Classes="header-action primary"
-                                Content="⇡ Export as Mod" Click="OnSaveModClicked"
-                                IsEnabled="False" />
-                        <Button Classes="header-action" Content="⎙ Export PNG" />
-                        <Button Classes="header-action" Content="? Documentation" />
-                        <Button Classes="header-action" Content="♥ Support" Click="OnBackToStart" />
+                        <Button Classes="btn secondary sm" Content="✦  Nouvelle" />
+                        <Button Classes="btn secondary sm" Content="⇣  Importer du jeu" />
+                        <Border Width="1" Height="18" Margin="2,0"
+                                Background="{DynamicResource ConceptBorderBrush}" />
+                        <Button x:Name="SaveModButton" Classes="btn secondary sm"
+                                Content="💾  Sauvegarder"
+                                Click="OnSaveModClicked" IsEnabled="False" />
+                        <Button Classes="btn ghost sm icon" Content="🖼"
+                                ToolTip.Tip="Exporter PNG" />
+                        <Button Classes="btn primary sm" Content="⇡  Exporter le mod" />
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- ============================================================
-                 [BIOME TABS] Latium / Albion / Désert(WIP) / Nordique(WIP)
-                 Sélection mutex via groupe ToggleButton (GroupName).
-                 ============================================================ -->
-            <Border Grid.Row="1" Padding="24,0"
-                    Background="{DynamicResource AnnoBgDarkerBrush}"
-                    BorderBrush="{DynamicResource ConceptGold700Brush}"
+            <!-- =================================================================
+                 [BIOME BAR] Editor.jsx 480-576 — biomes + map tabs + diff badge
+                 ================================================================= -->
+            <Border Grid.Row="1"
+                    Padding="16,8"
+                    Background="{DynamicResource ConceptInk800Brush}"
+                    BorderBrush="{DynamicResource ConceptBorderBrush}"
                     BorderThickness="0,0,0,1">
-                <StackPanel Orientation="Horizontal" Spacing="0">
-                    <RadioButton Classes="biome-tab" GroupName="Biome"
-                                 IsChecked="True" Content="LATIVM" />
-                    <RadioButton Classes="biome-tab" GroupName="Biome" Content="ALBION" />
-                    <RadioButton Classes="biome-tab" GroupName="Biome"
-                                 IsEnabled="False" Opacity="0.45" Content="DÉSERT" />
-                    <RadioButton Classes="biome-tab" GroupName="Biome"
-                                 IsEnabled="False" Opacity="0.45" Content="NORDIQUE" />
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto" VerticalAlignment="Center">
+
+                    <!-- Biomes (RadioButton.biome-tab) -->
+                    <RadioButton Grid.Column="0" Classes="biome-tab" GroupName="Biome"
+                                 IsChecked="True" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <!-- Glyphe Latium (losange/diamant) -->
+                            <Canvas Width="14" Height="14" VerticalAlignment="Center">
+                                <Path Stroke="{DynamicResource ConceptGold300Brush}" StrokeThickness="1.2"
+                                      Data="M 7 1.7 L 12.3 7 L 7 12.3 L 1.7 7 Z" />
+                                <Path Stroke="{DynamicResource ConceptGold300Brush}" StrokeThickness="1.2" Opacity="0.7"
+                                      Data="M 7 4.7 L 9.3 7 L 7 9.3 L 4.7 7 Z" />
+                                <Ellipse Canvas.Left="6.3" Canvas.Top="6.3" Width="1.4" Height="1.4"
+                                         Fill="{DynamicResource ConceptGold300Brush}" />
+                            </Canvas>
+                            <TextBlock Text="Latium" VerticalAlignment="Center" />
+                            <Border Padding="5,1" CornerRadius="999"
+                                    Background="{DynamicResource ConceptInk950Brush}">
+                                <TextBlock Text="0/3" Classes="t-mono" FontSize="9"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" />
+                            </Border>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Grid.Column="1" Classes="biome-tab" GroupName="Biome" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <!-- Glyphe Albion (forme abstraite trèfle) -->
+                            <Canvas Width="14" Height="14" VerticalAlignment="Center">
+                                <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.2"
+                                      Data="M 7 2.3 C 9.3 2.3 11.1 4 11.1 6.4 C 11.1 8.2 9.3 9.3 7.6 9.3 C 6.4 9.3 5.3 8.2 5.3 7 C 5.3 6.4 5.8 5.8 6.4 5.8" />
+                                <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.2"
+                                      Data="M 7 11.7 C 4.7 11.7 2.9 10 2.9 7.6 C 2.9 5.8 4.7 4.7 6.4 4.7 C 7.6 4.7 8.7 5.8 8.7 7 C 8.7 7.6 8.2 8.2 7.6 8.2" />
+                                </Canvas>
+                            <TextBlock Text="Albion" VerticalAlignment="Center" />
+                            <Border Padding="5,1" CornerRadius="999"
+                                    Background="{DynamicResource ConceptInk950Brush}">
+                                <TextBlock Text="0/3" Classes="t-mono" FontSize="9"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" />
+                            </Border>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Grid.Column="2" Classes="biome-tab" GroupName="Biome"
+                                 IsEnabled="False" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="◐" FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ConceptTextMuteBrush}" />
+                            <TextBlock Text="Désert" VerticalAlignment="Center" />
+                            <TextBlock Text="Bientôt" Classes="t-mute" FontSize="9" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Grid.Column="3" Classes="biome-tab" GroupName="Biome"
+                                 IsEnabled="False" Margin="0,0,16,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="❄" FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ConceptTextMuteBrush}" />
+                            <TextBlock Text="Nordique" VerticalAlignment="Center" />
+                            <TextBlock Text="Bientôt" Classes="t-mute" FontSize="9" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <!-- Séparateur vertical -->
+                    <Border Grid.Column="4" Width="1" Height="24" Margin="0,0,16,0"
+                            Background="{DynamicResource ConceptBorderBrush}" />
+
+                    <!-- Map tabs (Editor.jsx 528-553) -->
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Text="CARTE" Classes="t-eyebrow" FontSize="9" VerticalAlignment="Center" />
+                        <RadioButton Classes="map-tab" GroupName="Map" IsChecked="True" Content="1" />
+                        <RadioButton Classes="map-tab" GroupName="Map" Content="2" />
+                        <RadioButton Classes="map-tab" GroupName="Map" Content="3" />
+                    </StackPanel>
+
+                    <!-- Difficulty badge à droite (Editor.jsx 557-575) -->
+                    <TextBlock Grid.Column="6" Text="DIFFICULTÉ" Classes="t-eyebrow"
+                               FontSize="9" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <Border Grid.Column="7" Padding="12,4" CornerRadius="3"
+                            Background="#26C8A96A"
+                            BorderBrush="{DynamicResource ConceptGold700Brush}"
+                            BorderThickness="1">
+                        <TextBlock Text="NORMAL" Foreground="{DynamicResource ConceptGold300Brush}"
+                                   FontSize="11" LetterSpacing="0.6" />
+                    </Border>
+                </Grid>
             </Border>
 
-            <!-- ============================================================
-                 [BODY] 3 colonnes : Statistics · Map · Place Islands
-                 ============================================================ -->
-            <Grid Grid.Row="2" ColumnDefinitions="300,*,320" Margin="14,12,14,8">
+            <!-- =================================================================
+                 [BODY] Editor.jsx 579-917 — 3 colonnes : Stats / Canvas / PlaceIslands
+                 ================================================================= -->
+            <Grid Grid.Row="2" ColumnDefinitions="200,*,240">
 
-                <!-- ======================================================
-                     [COL 0] Stats panel (gauche)
-                     ====================================================== -->
-                <Border Grid.Column="0" Classes="anno-panel" Margin="0,0,8,0">
-                    <Grid RowDefinitions="Auto,*">
-                        <Border Grid.Row="0" Classes="anno-panel-header">
-                            <TextBlock Text="STATISTIQUES" Classes="t-display" FontSize="13" />
+                <!-- ──────────── [COL 0] StatsPanel (Editor.jsx 239-280) ──────────── -->
+                <Border Grid.Column="0"
+                        Padding="10"
+                        Background="{DynamicResource ConceptInk800Brush}"
+                        BorderBrush="{DynamicResource ConceptBorderBrush}"
+                        BorderThickness="0,0,1,0">
+                    <Border CornerRadius="4"
+                            Padding="12,10"
+                            BorderBrush="{DynamicResource ConceptBorderBrush}"
+                            BorderThickness="1">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                                <GradientStop Offset="0.0" Color="#EB14213a" />
+                                <GradientStop Offset="1.0" Color="#EB0d1626" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+
+                        <StackPanel Spacing="0">
+                            <TextBlock Text="STATISTIQUES" Classes="t-eyebrow" FontSize="9" Margin="0,0,0,6" />
+                            <Border Classes="divider-ornate" Margin="0,0,0,4" />
+
+                            <!-- Rows -->
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Standard" Foreground="{DynamicResource ConceptTextBrush}" FontSize="11" />
+                                <TextBlock Grid.Column="1" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="11">
+                                    <Run Text="0" /><Run Text=" " /><Run Foreground="#6e6858" Text="(0S 0M 0L 0XL)" />
+                                </TextBlock>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Starter" Foreground="{DynamicResource ConceptGold500Brush}" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0 / 4" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="11" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="3rd Party" Foreground="#9a7ab0" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="11" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Pirate" Foreground="#a85c5c" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="11" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Vulkan" Foreground="#d68a3c" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="11" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Continental" Foreground="#6a8a5c" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="11" />
+                            </Grid>
+
+                            <Border Height="1" Background="{DynamicResource ConceptBorderBrush}" Margin="0,6,0,6" />
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Spawns navire" Foreground="{DynamicResource ConceptTextDimBrush}" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0 / 4" Classes="t-mono"
+                                           Foreground="#5e7fb0" FontSize="11" />
+                            </Grid>
+
+                            <Border Height="1" Background="{DynamicResource ConceptGold700Brush}" Margin="0,6,0,6" Opacity="0.6" />
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                <TextBlock Text="Total" Foreground="{DynamicResource ConceptGold300Brush}" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="0" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold300Brush}" FontSize="11" />
+                            </Grid>
+
+                            <!-- Map detail compact (réutilise les x:Name attendus par le code-behind) -->
+                            <Border Classes="divider-ornate" />
+                            <TextBlock Text="CARTE COURANTE" Classes="t-eyebrow" FontSize="9" />
+                            <TextBlock x:Name="MapDetailTitle" Text="—"
+                                       Foreground="{DynamicResource ConceptTextBrush}" FontSize="12"
+                                       FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            <TextBlock x:Name="MapDetailSubtitle" Classes="t-mute" FontSize="10"
+                                       TextWrapping="Wrap" Margin="0,1,0,4" />
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                <TextBlock Text="Taille" Foreground="{DynamicResource ConceptTextDimBrush}" FontSize="10" />
+                                <TextBlock Grid.Column="1" x:Name="StatSize" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="10" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                <TextBlock Text="Zone jouable" Foreground="{DynamicResource ConceptTextDimBrush}" FontSize="10" />
+                                <TextBlock Grid.Column="1" x:Name="StatPlayable" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="10" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                <TextBlock Text="Éléments" Foreground="{DynamicResource ConceptTextDimBrush}" FontSize="10" />
+                                <TextBlock Grid.Column="1" x:Name="StatElements" Classes="t-mono"
+                                           Foreground="{DynamicResource ConceptGold400Brush}" FontSize="10" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Border>
+
+                <!-- ──────────── [COL 1] Canvas central (Editor.jsx 593-814) ──────────── -->
+                <Grid Grid.Column="1" ClipToBounds="True">
+                    <!-- Background radial (Editor.jsx 597) -->
+                    <Grid.Background>
+                        <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%"
+                                             RadiusX="100%" RadiusY="100%">
+                            <GradientStop Offset="0.0" Color="#2a3850" />
+                            <GradientStop Offset="1.0" Color="{StaticResource ConceptInk950}" />
+                        </RadialGradientBrush>
+                    </Grid.Background>
+
+                    <!-- Wrapper carré centré (taille fixe pour l'instant — concept utilise min(82%,720px)) -->
+                    <Grid Width="640" Height="640" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                        <!-- Le losange : carré tourné -45°, border gold-700, bg #1f2d48
+                             (Editor.jsx 612-639) -->
+                        <Border Width="453" Height="453"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Background="#1f2d48"
+                                BorderBrush="{DynamicResource ConceptGold700Brush}"
+                                BorderThickness="2"
+                                BoxShadow="0 20 60 0 #99000000"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <RotateTransform Angle="-45" />
+                            </Border.RenderTransform>
+
+                            <!-- Liseré violet inset (Editor.jsx 626-630) -->
+                            <Border Margin="6"
+                                    BorderBrush="#8a4ca8"
+                                    BorderThickness="1"
+                                    Opacity="0.6">
+                                <!-- MapView placeholder — sera intégré quand on portera le canvas
+                                     interactif. Pour l'instant on rend le control existant à
+                                     plat dans le losange (sans rotation) — le user verra le
+                                     rendu BBDom mais penché. -->
+                                <Border Margin="6">
+                                    <!-- MapView placé dans le losange (suit la rotation -45° du
+                                         parent). Plus tard on contre-rotera ce contenu pour qu'il
+                                         soit droit, dans une étape "MapCanvas" dédiée. -->
+                                    <c:MapView x:Name="MapRenderer" />
+                                </Border>
+                            </Border>
                         </Border>
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="16,12" Spacing="12">
 
-                                <!-- Map detail (titre + sous-titre) — placés ici plutôt qu'au-dessus du canvas
-                                     pour libérer la zone centrale. -->
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="CARTE COURANTE" Classes="t-eyebrow" />
-                                    <TextBlock x:Name="MapDetailTitle" FontSize="15" FontWeight="SemiBold"
-                                               Text="{l:L Key=main.select_map_hint}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock x:Name="MapDetailSubtitle" Opacity="0.65" FontSize="11"
-                                               TextWrapping="Wrap" />
+                        <!-- Marqueurs cardinaux N/E/S/W (Editor.jsx 658-676) -->
+                        <Border Width="28" Height="28" CornerRadius="14"
+                                BorderBrush="{DynamicResource ConceptGold500Brush}" BorderThickness="1"
+                                HorizontalAlignment="Center" VerticalAlignment="Top"
+                                Margin="0,-14,0,0">
+                            <Border.Background>
+                                <RadialGradientBrush Center="30%,25%" GradientOrigin="30%,25%"
+                                                     RadiusX="50%" RadiusY="50%">
+                                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk900}" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="N" FontFamily="{StaticResource DisplayFont}"
+                                       FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{DynamicResource ConceptGold300Brush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <Border Width="28" Height="28" CornerRadius="14"
+                                BorderBrush="{DynamicResource ConceptGold500Brush}" BorderThickness="1"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="0,0,-14,0">
+                            <Border.Background>
+                                <RadialGradientBrush Center="30%,25%" GradientOrigin="30%,25%"
+                                                     RadiusX="50%" RadiusY="50%">
+                                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk900}" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="E" FontFamily="{StaticResource DisplayFont}"
+                                       FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{DynamicResource ConceptGold300Brush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <Border Width="28" Height="28" CornerRadius="14"
+                                BorderBrush="{DynamicResource ConceptGold500Brush}" BorderThickness="1"
+                                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                Margin="0,0,0,-14">
+                            <Border.Background>
+                                <RadialGradientBrush Center="30%,25%" GradientOrigin="30%,25%"
+                                                     RadiusX="50%" RadiusY="50%">
+                                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk900}" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="S" FontFamily="{StaticResource DisplayFont}"
+                                       FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{DynamicResource ConceptGold300Brush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <Border Width="28" Height="28" CornerRadius="14"
+                                BorderBrush="{DynamicResource ConceptGold500Brush}" BorderThickness="1"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Margin="-14,0,0,0">
+                            <Border.Background>
+                                <RadialGradientBrush Center="30%,25%" GradientOrigin="30%,25%"
+                                                     RadiusX="50%" RadiusY="50%">
+                                    <GradientStop Offset="0.0" Color="{StaticResource ConceptInk700}" />
+                                    <GradientStop Offset="1.0" Color="{StaticResource ConceptInk900}" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="W" FontFamily="{StaticResource DisplayFont}"
+                                       FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{DynamicResource ConceptGold300Brush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </Grid>
+
+                    <!-- Toggle "Show island images" top-left (Editor.jsx 798-813) -->
+                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14"
+                            Padding="10,6" CornerRadius="4"
+                            Background="#EB0d1626"
+                            BorderBrush="{DynamicResource ConceptBorderBrush}"
+                            BorderThickness="1">
+                        <CheckBox IsChecked="True" FontSize="10"
+                                  Foreground="{DynamicResource ConceptTextDimBrush}">
+                            <TextBlock Text="Images d'îles" />
+                        </CheckBox>
+                    </Border>
+
+                    <!-- Légende bottom-left (Editor.jsx 752-778) -->
+                    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="14"
+                            Padding="12,8" CornerRadius="4"
+                            Background="#EB0d1626"
+                            BorderBrush="{DynamicResource ConceptBorderBrush}"
+                            BorderThickness="1">
+                        <Grid ColumnDefinitions="Auto,16,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="TAILLE" Classes="t-eyebrow" FontSize="8" Margin="0,0,0,2" />
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#d8bf83" Text="S" /><Run Text=" Small" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#d8bf83" Text="M" /><Run Text=" Medium" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#d8bf83" Text="L" /><Run Text=" Large" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#d8bf83" Text="XL" /><Run Text=" Extra Large" Foreground="#a8a090" />
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="2">
+                                <TextBlock Text="TYPE" Classes="t-eyebrow" FontSize="8" Margin="0,0,0,2" />
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#8a9cb0" Text="N" /><Run Text=" Normal" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#c8a96a" Text="S" /><Run Text=" Starter" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#a85c5c" Text="P" /><Run Text=" Pirate" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#9a7ab0" Text="T" /><Run Text=" 3rd Party" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#d68a3c" Text="V" /><Run Text=" Vulkan" Foreground="#a8a090" />
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <Run Foreground="#6a8a5c" Text="C" /><Run Text=" Continental" Foreground="#a8a090" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Contrôles bottom-right (Editor.jsx 781-795) -->
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="14"
+                            Padding="12,8" CornerRadius="4"
+                            Background="#EB0d1626"
+                            BorderBrush="{DynamicResource ConceptBorderBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="CONTRÔLES" Classes="t-eyebrow" FontSize="8" Margin="0,0,0,2" />
+                            <TextBlock Text="Molette · Zoom" Classes="t-dim" FontSize="10" />
+                            <TextBlock Text="Ctrl + Molette · Pan ↑↓" Classes="t-dim" FontSize="10" />
+                            <TextBlock Text="Shift + Molette · Pan ←→" Classes="t-dim" FontSize="10" />
+                            <TextBlock Text="Bouton du milieu · Pan" Classes="t-dim" FontSize="10" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- ──────────── [COL 2] Place Islands (Editor.jsx 817-916) ──────────── -->
+                <Border Grid.Column="2"
+                        Background="{DynamicResource ConceptInk800Brush}"
+                        BorderBrush="{DynamicResource ConceptBorderBrush}"
+                        BorderThickness="1,0,0,0">
+                    <Grid RowDefinitions="Auto,*">
+
+                        <!-- Titre du biome courant -->
+                        <Border Grid.Row="0" Padding="14,12"
+                                BorderBrush="{DynamicResource ConceptBorderBrush}"
+                                BorderThickness="0,0,0,1">
+                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <Canvas Width="18" Height="18" VerticalAlignment="Center">
+                                    <Path Stroke="{DynamicResource ConceptGold400Brush}" StrokeThickness="1.4"
+                                          Data="M 9 2.25 L 15.75 9 L 9 15.75 L 2.25 9 Z" />
+                                    <Path Stroke="{DynamicResource ConceptGold400Brush}" StrokeThickness="1.4" Opacity="0.7"
+                                          Data="M 9 6 L 12 9 L 9 12 L 6 9 Z" />
+                                    <Ellipse Canvas.Left="8.1" Canvas.Top="8.1" Width="1.8" Height="1.8"
+                                             Fill="{DynamicResource ConceptGold400Brush}" />
+                                </Canvas>
+                                <TextBlock Text="LATIUM" Classes="t-display"
+                                           FontSize="14" Foreground="{DynamicResource ConceptGold300Brush}"
+                                           LetterSpacing="2" />
+                            </StackPanel>
+                        </Border>
+
+                        <ScrollViewer Grid.Row="1" Padding="12" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="PLACER UNE ÎLE" Classes="t-eyebrow" Margin="0,0,0,4" />
+
+                                <!-- PlaceRow Spawn -->
+                                <Grid ColumnDefinitions="60,*" Margin="0,0,0,2">
+                                    <TextBlock Grid.Column="0" Text="Spawn"
+                                               FontFamily="{StaticResource DisplayFont}" FontSize="10"
+                                               LetterSpacing="0.6"
+                                               Foreground="{DynamicResource ConceptTextDimBrush}"
+                                               TextAlignment="Right" Margin="0,0,8,0"
+                                               VerticalAlignment="Center" />
+                                    <Button Grid.Column="1" Classes="place-btn filled"
+                                            BorderBrush="#5e7fb0" Content="⚓" />
+                                </Grid>
+
+                                <!-- PlaceRow Starter -->
+                                <Grid ColumnDefinitions="60,*" Margin="0,0,0,2">
+                                    <TextBlock Grid.Column="0" Text="Starter"
+                                               FontFamily="{StaticResource DisplayFont}" FontSize="10"
+                                               LetterSpacing="0.6"
+                                               Foreground="{DynamicResource ConceptTextDimBrush}"
+                                               TextAlignment="Right" Margin="0,0,8,0"
+                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Classes="place-btn" BorderBrush="#c8a96a" Content="L" />
+                                        <Button Classes="place-btn" BorderBrush="#c8a96a" Content="XL" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- PlaceRow Normal -->
+                                <Grid ColumnDefinitions="60,*" Margin="0,0,0,2">
+                                    <TextBlock Grid.Column="0" Text="Normal"
+                                               FontFamily="{StaticResource DisplayFont}" FontSize="10"
+                                               LetterSpacing="0.6"
+                                               Foreground="{DynamicResource ConceptTextDimBrush}"
+                                               TextAlignment="Right" Margin="0,0,8,0"
+                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Classes="place-btn" Content="S" />
+                                        <Button Classes="place-btn" Content="M" />
+                                        <Button Classes="place-btn" Content="L" />
+                                        <Button Classes="place-btn" Content="XL" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- PlaceRow NPCs -->
+                                <Grid ColumnDefinitions="60,*" Margin="0,0,0,2">
+                                    <TextBlock Grid.Column="0" Text="NPCs"
+                                               FontFamily="{StaticResource DisplayFont}" FontSize="10"
+                                               LetterSpacing="0.6"
+                                               Foreground="{DynamicResource ConceptTextDimBrush}"
+                                               TextAlignment="Right" Margin="0,0,8,0"
+                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Classes="place-btn" BorderBrush="#9a7ab0" Content="3rd Party" />
+                                        <Button Classes="place-btn" BorderBrush="#a85c5c" Content="Pirate" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- PlaceRow Vulkan -->
+                                <Grid ColumnDefinitions="60,*" Margin="0,0,0,2">
+                                    <TextBlock Grid.Column="0" Text="Vulkan"
+                                               FontFamily="{StaticResource DisplayFont}" FontSize="10"
+                                               LetterSpacing="0.6"
+                                               Foreground="{DynamicResource ConceptTextDimBrush}"
+                                               TextAlignment="Right" Margin="0,0,8,0"
+                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Classes="place-btn" BorderBrush="#d68a3c" Content="S" />
+                                        <Button Classes="place-btn" BorderBrush="#d68a3c" Content="M" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Button Classes="btn secondary sm block" Content="Île personnalisée…"
+                                        Margin="0,8,0,0" />
+
+                                <!-- Compteur Starter (Editor.jsx 900-913) -->
+                                <Border Margin="0,8,0,0" Padding="10,8" CornerRadius="4"
+                                        Background="{DynamicResource ConceptInk950Brush}"
+                                        BorderBrush="{DynamicResource ConceptGold700Brush}"
+                                        BorderThickness="1">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="✓ Starter" FontSize="11"
+                                                   Foreground="{DynamicResource ConceptGold300Brush}" />
+                                        <TextBlock Grid.Column="1" Text="0 / 4" Classes="t-mono" FontSize="11"
+                                                   Foreground="{DynamicResource ConceptGold300Brush}" />
+                                    </Grid>
+                                </Border>
+
+                                <!-- Selection panel (visible quand sélection active) — réutilise les
+                                     x:Name attendus par le code-behind -->
+                                <TextBlock x:Name="SelHint" Classes="t-mute" FontSize="11"
+                                           Margin="0,12,0,0"
+                                           Text="{l:L Key=main.no_selection_hint}" />
+                                <StackPanel x:Name="ActionButtons" Orientation="Horizontal" IsVisible="False" Spacing="4">
+                                    <Button Classes="btn secondary sm" Content="{l:L Key=main.duplicate}"
+                                            Click="OnDuplicateClicked" ToolTip.Tip="Ctrl+D" />
+                                    <Button x:Name="RotateButton" Classes="btn secondary sm"
+                                            Content="{l:L Key=main.rotate}"
+                                            Click="OnRotateClicked" ToolTip.Tip="R" />
+                                    <Button Classes="btn primary sm" Content="{l:L Key=main.delete}"
+                                            Click="OnDeleteClicked" ToolTip.Tip="Suppr" />
                                 </StackPanel>
+                                <StackPanel x:Name="SelProperties" Spacing="6" />
 
-                                <Border Classes="divider-ornate" />
-
-                                <!-- Stats principales (taille / zone jouable / éléments) -->
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="MESURES" Classes="t-eyebrow" />
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Column="0" Text="{l:L Key=main.size}" Opacity="0.7" FontSize="12" />
-                                        <TextBlock Grid.Column="1" x:Name="StatSize" Classes="t-gold"
-                                                   FontWeight="SemiBold" FontSize="12" />
-                                    </Grid>
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Column="0" Text="{l:L Key=main.playable_area}" Opacity="0.7" FontSize="12" />
-                                        <TextBlock Grid.Column="1" x:Name="StatPlayable" Classes="t-gold"
-                                                   FontWeight="SemiBold" FontSize="12" />
-                                    </Grid>
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Column="0" Text="{l:L Key=main.elements}" Opacity="0.7" FontSize="12" />
-                                        <TextBlock Grid.Column="1" x:Name="StatElements" Classes="t-gold"
-                                                   FontWeight="SemiBold" FontSize="12" />
-                                    </Grid>
-                                </StackPanel>
-
-                                <Border Classes="divider-ornate" />
-
-                                <!-- Difficulté (mock — branchera sur la session quand on portera Editor.jsx) -->
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="DIFFICULTÉ" Classes="t-eyebrow" />
-                                    <UniformGrid Columns="3">
-                                        <RadioButton Classes="size-pill" GroupName="Difficulty" Margin="0,0,4,0"
-                                                     Content="EASY" Width="68" />
-                                        <RadioButton Classes="size-pill" GroupName="Difficulty" Margin="0,0,4,0"
-                                                     Content="MEDIUM" Width="68" IsChecked="True" />
-                                        <RadioButton Classes="size-pill" GroupName="Difficulty"
-                                                     Content="HARD" Width="68" />
-                                    </UniformGrid>
-                                </StackPanel>
-
-                                <Border Classes="divider-ornate" />
-
-                                <!-- Comptes joueurs / spawns / starter (placeholders alignés sur le concept) -->
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="JOUEURS &amp; SPAWNS" Classes="t-eyebrow" />
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Column="0" Text="Total" Opacity="0.7" FontSize="12" />
-                                        <TextBlock Grid.Column="1" Text="—" Classes="t-gold" FontWeight="SemiBold" FontSize="12" />
-                                    </Grid>
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Column="0" Text="Spawns navire" Opacity="0.7" FontSize="12" />
-                                        <TextBlock Grid.Column="1" Text="—" Classes="t-gold" FontWeight="SemiBold" FontSize="12" />
-                                    </Grid>
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Column="0" Text="Starter" Opacity="0.7" FontSize="12" />
-                                        <TextBlock Grid.Column="1" Text="—" Classes="t-gold" FontWeight="SemiBold" FontSize="12" />
-                                    </Grid>
+                                <!-- Undo / Redo en bas (sortis du footer du concept, gardés ici par
+                                     pragmatisme — le concept ne montre pas de footer Undo/Redo
+                                     visible dans Editor.jsx) -->
+                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,12,0,0"
+                                            HorizontalAlignment="Right">
+                                    <Button x:Name="UndoButton" Classes="btn secondary sm"
+                                            Content="{l:L Key=main.undo}"
+                                            Click="OnUndoClicked" ToolTip.Tip="Ctrl+Z" />
+                                    <Button x:Name="RedoButton" Classes="btn secondary sm"
+                                            Content="{l:L Key=main.redo}"
+                                            Click="OnRedoClicked" ToolTip.Tip="Ctrl+Y" />
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>
                 </Border>
-
-                <!-- ======================================================
-                     [COL 1] Map canvas (centre)
-                     ====================================================== -->
-                <Border Grid.Column="1" Classes="anno-panel" Margin="4,0">
-                    <Grid RowDefinitions="*">
-                        <!-- Le losange isométrique sera adapté à l'étape 4 (rotation + scale).
-                             Pour l'instant on rend le MapView tel quel sur fond parchment-stone. -->
-                        <Border Background="{DynamicResource ConceptStone200Brush}"
-                                CornerRadius="20,20,8,8" ClipToBounds="True">
-                            <c:MapView x:Name="MapRenderer" />
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- ======================================================
-                     [COL 2] Sidebar droite (Place Islands + Selection + View)
-                     ====================================================== -->
-                <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto" Margin="8,0,0,0">
-
-                    <!-- Place Islands : tailles + types + île personnalisée -->
-                    <Border Grid.Row="0" Classes="anno-panel" Margin="0,0,0,8">
-                        <Grid RowDefinitions="Auto,*">
-                            <Border Grid.Row="0" Classes="anno-panel-header">
-                                <TextBlock Text="PLACER UNE ÎLE" Classes="t-display" FontSize="13" />
-                            </Border>
-                            <StackPanel Grid.Row="1" Margin="14,12" Spacing="12">
-
-                                <!-- Tailles S / M / L / XL -->
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="TAILLE" Classes="t-eyebrow" />
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="S" />
-                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="M" IsChecked="True" />
-                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="L" />
-                                        <RadioButton Classes="size-pill" GroupName="IslandSize" Content="XL" />
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <!-- Types N / S / P / T / V / C — couleurs alignées avec ISLAND_TYPES (Editor.jsx) -->
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="TYPE" Classes="t-eyebrow" />
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <RadioButton Classes="type-chip" GroupName="IslandType"
-                                                     Background="#8A9CB0" Content="N" IsChecked="True" />
-                                        <RadioButton Classes="type-chip" GroupName="IslandType"
-                                                     Background="#C8A96A" Content="S" />
-                                        <RadioButton Classes="type-chip" GroupName="IslandType"
-                                                     Background="#A85C5C" Content="P" />
-                                        <RadioButton Classes="type-chip" GroupName="IslandType"
-                                                     Background="#9A7AB0" Content="T" />
-                                        <RadioButton Classes="type-chip" GroupName="IslandType"
-                                                     Background="#D68A3C" Content="V" />
-                                        <RadioButton Classes="type-chip" GroupName="IslandType"
-                                                     Background="#6A8A5C" Content="C" />
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <Button Content="+ Île personnalisée…" HorizontalAlignment="Stretch"
-                                        Classes="header-action" Padding="10,8" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- Selection (élément sélectionné dans le canvas).
-                         Garde les x:Name référencés par le code-behind : SelHint, ActionButtons,
-                         RotateButton, SelProperties — tous dans le même panneau, avec scroll. -->
-                    <Border Grid.Row="1" Classes="anno-panel" Margin="0,0,0,8">
-                        <Grid RowDefinitions="Auto,*">
-                            <Border Grid.Row="0" Classes="anno-panel-header">
-                                <TextBlock Text="SÉLECTION" Classes="t-display" FontSize="13" />
-                            </Border>
-                            <ScrollViewer Grid.Row="1" Padding="14,10" VerticalScrollBarVisibility="Auto">
-                                <StackPanel Spacing="10">
-                                    <TextBlock x:Name="SelHint" Opacity="0.6" FontSize="12"
-                                               Text="{l:L Key=main.no_selection_hint}"
-                                               TextWrapping="Wrap" />
-                                    <StackPanel x:Name="ActionButtons" Orientation="Horizontal"
-                                                IsVisible="False" Spacing="4">
-                                        <Button Content="{l:L Key=main.duplicate}" Click="OnDuplicateClicked"
-                                                Padding="8,4" ToolTip.Tip="Ctrl+D" />
-                                        <Button x:Name="RotateButton" Content="{l:L Key=main.rotate}"
-                                                Click="OnRotateClicked" Padding="8,4" ToolTip.Tip="R" />
-                                        <Button Content="{l:L Key=main.delete}" Click="OnDeleteClicked"
-                                                Padding="8,4" ToolTip.Tip="Suppr" />
-                                    </StackPanel>
-                                    <StackPanel x:Name="SelProperties" Spacing="6" />
-                                </StackPanel>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
-
-                    <!-- View : Show island images / Reset zoom (placeholders bindés plus tard) -->
-                    <Border Grid.Row="2" Classes="anno-panel">
-                        <Grid RowDefinitions="Auto,*">
-                            <Border Grid.Row="0" Classes="anno-panel-header">
-                                <TextBlock Text="AFFICHAGE" Classes="t-display" FontSize="13" />
-                            </Border>
-                            <StackPanel Grid.Row="1" Margin="14,10" Spacing="8">
-                                <CheckBox Content="Images d'îles" IsChecked="True" />
-                                <Button Content="↺  Réinitialiser zoom" HorizontalAlignment="Stretch"
-                                        Classes="header-action" Padding="10,6" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
             </Grid>
-
-            <!-- ============================================================
-                 [FOOTER] Status + Undo/Redo
-                 ============================================================ -->
-            <Border Grid.Row="3" Padding="24,8"
-                    Background="{DynamicResource AnnoBgDarkerBrush}"
-                    BorderBrush="{DynamicResource ConceptGold700Brush}"
-                    BorderThickness="0,1,0,0">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6"
-                                VerticalAlignment="Center">
-                        <Button x:Name="UndoButton" Content="{l:L Key=main.undo}"
-                                Click="OnUndoClicked" Padding="10,4" FontSize="11"
-                                ToolTip.Tip="Ctrl+Z" />
-                        <Button x:Name="RedoButton" Content="{l:L Key=main.redo}"
-                                Click="OnRedoClicked" Padding="10,4" FontSize="11"
-                                ToolTip.Tip="Ctrl+Y" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="1" x:Name="StatusBar"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                               FontSize="11" Opacity="0.75" />
-                    <TextBlock Grid.Column="2" Text="v0.8.1"
-                               VerticalAlignment="Center" FontSize="10" Opacity="0.45" />
-                </Grid>
-            </Border>
         </Grid>
 
         <!-- ============================================================
              [COMPATIBILITÉ] Contrôles existants conservés hors-écran.
              Le code-behind référence ces x:Name via FindControl ; ils
-             doivent exister dans l'arbre visuel. IsVisible="False" suffit
-             pour qu'ils soient trouvés sans être rendus. À recâbler dans
-             le nouveau flux au fur et à mesure (galerie vanilla → modale,
-             session props → sidebar dédiée, elements tree → panneau
-             repliable, history → footer compact, etc.).
+             doivent exister dans l'arbre visuel pour ne pas être null.
+             À recâbler dans le nouveau flux progressivement.
              ============================================================ -->
         <Border IsVisible="False">
             <StackPanel>
