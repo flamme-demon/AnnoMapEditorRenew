@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using AnnoMapEditor.UI.Avalonia.ViewModels;
 using AnnoMapEditor.UI.Avalonia;
 using AnnoMapEditor.Utilities;
@@ -15,6 +17,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
     public partial class StartWindow : Window
     {
         private readonly StartWindowViewModel _viewModel;
+        private bool _autoStartAttempted;
 
         public StartWindow()
         {
@@ -33,6 +36,33 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             var versionLabel = this.FindControl<TextBlock>("VersionLabel");
             if (versionLabel != null)
                 versionLabel.Text = AppInfo.ShortVersionLabel;
+
+            // Auto-bypass : si l'autodetect a trouvé un dossier d'install Anno
+            // 117 valide, on enchaîne automatiquement sur MainWindow sans que
+            // l'utilisateur ait à cliquer "Continuer". La fenêtre Start est
+            // brièvement visible (1 frame) le temps de l'init DataManager.
+            // Si l'init échoue (path obsolète, mod corrompu...) on reste sur
+            // StartWindow et l'utilisateur peut corriger manuellement.
+            Opened += async (_, _) =>
+            {
+                if (_autoStartAttempted) return;
+                _autoStartAttempted = true;
+
+                string? gamePath = Settings.Instance.GamePath;
+                if (string.IsNullOrWhiteSpace(gamePath) || !Directory.Exists(gamePath)) return;
+                if (!Directory.Exists(Path.Combine(gamePath, "maindata"))) return;
+
+                await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    bool ok = await _viewModel.InitializeAsync();
+                    if (ok)
+                    {
+                        var main = new MainWindow();
+                        main.Show();
+                        Close();
+                    }
+                }, DispatcherPriority.Background);
+            };
         }
 
         private void InitializeComponent()
