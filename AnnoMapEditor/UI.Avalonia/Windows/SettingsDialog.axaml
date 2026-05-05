@@ -23,7 +23,9 @@
         </Border>
 
         <!-- Body -->
-        <ScrollViewer Grid.Row="1" Padding="32,20">
+        <ScrollViewer Grid.Row="1" Padding="32,20"
+                      VerticalScrollBarVisibility="Visible"
+                      AllowAutoHide="False">
             <StackPanel Spacing="22">
 
                 <!-- ── Démarrage ── -->
