@@ -1,9 +1,10 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using AnnoMapEditor.UI.Avalonia;
 using AnnoMapEditor.Utilities;
 
@@ -32,8 +33,12 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 var expertMode = this.FindControl<CheckBox>("ExpertModeCheckBox");
                 if (expertMode != null) expertMode.IsChecked = Settings.Instance.EnableExpertMode;
 
-                var gamePath = this.FindControl<TextBlock>("GamePathLabel");
-                if (gamePath != null) gamePath.Text = Settings.Instance.GamePath ?? "";
+                var gamePath = this.FindControl<TextBox>("GamePathBox");
+                if (gamePath != null)
+                {
+                    gamePath.Text = Settings.Instance.GamePath ?? "";
+                    gamePath.TextChanged += OnGamePathChanged;
+                }
 
                 SyncLanguage();
             }
@@ -52,7 +57,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             string current = Localizer.Current.Language;
             combo.SelectedIndex = current == "fr" ? 1 : 0;
         }
-
 
         private void OnAutoStartToggled(object? sender, RoutedEventArgs e)
         {
@@ -74,6 +78,36 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             if (sender is not ComboBox combo) return;
             if (combo.SelectedItem is ComboBoxItem item && item.Tag is string lang)
                 Localizer.Current.Language = lang;
+        }
+
+        private void OnGamePathChanged(object? sender, TextChangedEventArgs e)
+        {
+            if (_suppressEvents) return;
+            if (sender is TextBox tb)
+                Settings.Instance.GamePath = string.IsNullOrWhiteSpace(tb.Text) ? null : tb.Text;
+        }
+
+        private async void OnBrowseClicked(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+                {
+                    Title = "Sélectionne le dossier d'installation d'Anno 117",
+                    AllowMultiple = false
+                });
+
+                if (folders.Count > 0)
+                {
+                    string path = folders[0].Path.LocalPath;
+                    var box = this.FindControl<TextBox>("GamePathBox");
+                    if (box != null) box.Text = path;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Browse failed: {ex.Message}");
+            }
         }
 
         private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();

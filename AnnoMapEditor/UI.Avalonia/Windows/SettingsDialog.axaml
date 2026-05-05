@@ -22,91 +22,83 @@
             </StackPanel>
         </Border>
 
-        <!-- Body : ScrollViewer simple. `HorizontalScrollBarVisibility="Disabled"`
-             contraint le contenu à la largeur de la fenêtre — sans ça, le ScrollViewer
-             autorisait le débordement à droite (les wrap des labels étaient ignorés
-             car le contenu s'étendait à sa width naturelle). Le scrollbar vertical
-             n'apparaît que si la hauteur dépasse, et hérite des couleurs concept du
-             style global ScrollBar (App.axaml). -->
-        <ScrollViewer Grid.Row="1" Padding="32,20"
-                      HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Spacing="22">
+        <!-- Body : pas de ScrollViewer (le mode Disabled d'Avalonia ne contraint
+             pas le contenu, ce qui causait des débordements à droite quel que soit
+             le wrap demandé sur les enfants). Tout est dans un StackPanel direct ;
+             la fenêtre 520x640 est dimensionnée pour que ça rentre sans scroll. -->
+        <StackPanel Grid.Row="1" Spacing="22" Margin="32,20">
 
-                <!-- ── Démarrage ── -->
-                <StackPanel Spacing="10">
-                    <TextBlock Text="DÉMARRAGE" Classes="t-eyebrow" />
-                    <CheckBox x:Name="AutoStartCheckBox"
-                              IsCheckedChanged="OnAutoStartToggled"
-                              Foreground="{DynamicResource ConceptTextBrush}">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{l:L Key=start.autostart}" FontSize="13" />
-                            <TextBlock Text="{l:L Key=start.autostart_help}"
-                                       Foreground="{DynamicResource ConceptTextMuteBrush}"
-                                       FontSize="11" />
-                        </StackPanel>
-                    </CheckBox>
-                </StackPanel>
-
-                <Border Classes="divider-ornate" />
-
-                <!-- ── Apparence ── -->
-                <StackPanel Spacing="10">
-                    <TextBlock Text="APPARENCE" Classes="t-eyebrow" />
-
-                    <Grid ColumnDefinitions="140,*">
-                        <TextBlock Grid.Column="0" Text="Langue"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource ConceptTextBrush}" />
-                        <ComboBox Grid.Column="1" x:Name="LanguageCombo"
-                                  Classes="input" HorizontalAlignment="Stretch"
-                                  SelectionChanged="OnLanguageChanged">
-                            <ComboBoxItem Content="English"  Tag="en" />
-                            <ComboBoxItem Content="Français" Tag="fr" />
-                        </ComboBox>
-                    </Grid>
-                </StackPanel>
-
-                <Border Classes="divider-ornate" />
-
-                <!-- ── Avancé ── -->
-                <StackPanel Spacing="10">
-                    <TextBlock Text="AVANCÉ" Classes="t-eyebrow" />
-
-                    <CheckBox x:Name="ExpertModeCheckBox"
-                              IsCheckedChanged="OnExpertModeToggled"
-                              Foreground="{DynamicResource ConceptTextBrush}">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="Mode expert" FontSize="13" />
-                            <TextBlock Text="Active les overrides de chemins (data, mods)."
-                                       Foreground="{DynamicResource ConceptTextMuteBrush}"
-                                       FontSize="11" />
-                        </StackPanel>
-                    </CheckBox>
-
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="DOSSIER DU JEU" Classes="t-eyebrow" />
-                        <!-- Path read-only : Border + TextBlock plutôt qu'un TextBox.
-                             Un TextBox Avalonia pose une Width naturelle plus large
-                             que son parent pour les longs textes même avec
-                             `TextWrapping=Wrap` + `MinWidth=0`, et le
-                             ScrollContentPresenter en mode `HorizontalScrollBarVisibility=
-                             Disabled` ne le contraint pas (cas observé via DevTools).
-                             Un TextBlock wrap correctement dès que sa Width est bornée
-                             par son parent — comportement attendu. -->
-                        <Border Background="{DynamicResource ConceptInk950Brush}"
-                                BorderBrush="{DynamicResource ConceptBorderBrush}"
-                                BorderThickness="1" CornerRadius="4"
-                                Padding="12,9">
-                            <TextBlock x:Name="GamePathLabel"
-                                       TextWrapping="Wrap"
-                                       FontFamily="{StaticResource MonoFont}"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource ConceptTextBrush}" />
-                        </Border>
+            <!-- ── Démarrage ── -->
+            <StackPanel Spacing="10">
+                <TextBlock Text="DÉMARRAGE" Classes="t-eyebrow" />
+                <CheckBox x:Name="AutoStartCheckBox"
+                          IsCheckedChanged="OnAutoStartToggled"
+                          Foreground="{DynamicResource ConceptTextBrush}">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{l:L Key=start.autostart}" FontSize="13" />
+                        <TextBlock Text="{l:L Key=start.autostart_help}"
+                                   Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                   FontSize="11" />
                     </StackPanel>
+                </CheckBox>
+            </StackPanel>
+
+            <Border Classes="divider-ornate" />
+
+            <!-- ── Apparence ── -->
+            <StackPanel Spacing="10">
+                <TextBlock Text="APPARENCE" Classes="t-eyebrow" />
+
+                <Grid ColumnDefinitions="140,*">
+                    <TextBlock Grid.Column="0" Text="Langue"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource ConceptTextBrush}" />
+                    <ComboBox Grid.Column="1" x:Name="LanguageCombo"
+                              Classes="input" HorizontalAlignment="Stretch"
+                              SelectionChanged="OnLanguageChanged">
+                        <ComboBoxItem Content="English"  Tag="en" />
+                        <ComboBoxItem Content="Français" Tag="fr" />
+                    </ComboBox>
+                </Grid>
+            </StackPanel>
+
+            <Border Classes="divider-ornate" />
+
+            <!-- ── Avancé ── -->
+            <StackPanel Spacing="10">
+                <TextBlock Text="AVANCÉ" Classes="t-eyebrow" />
+
+                <CheckBox x:Name="ExpertModeCheckBox"
+                          IsCheckedChanged="OnExpertModeToggled"
+                          Foreground="{DynamicResource ConceptTextBrush}">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Mode expert" FontSize="13" />
+                        <TextBlock Text="Active les overrides de chemins (data, mods)."
+                                   Foreground="{DynamicResource ConceptTextMuteBrush}"
+                                   FontSize="11" />
+                    </StackPanel>
+                </CheckBox>
+
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="DOSSIER DU JEU" Classes="t-eyebrow"
+                                   VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Classes="btn ghost sm"
+                                Content="Parcourir…" Click="OnBrowseClicked" />
+                    </Grid>
+                    <!-- TextBox éditable. Width plafonné explicitement à 420 (= 520
+                         Window - 32*2 padding - quelques pixels d'air) pour éviter le
+                         débordement à droite : Avalonia n'impose pas la contrainte de
+                         largeur du parent au TextBox quand son contenu (path long) est
+                         plus large que MinWidth. -->
+                    <TextBox x:Name="GamePathBox" Classes="input"
+                             TextWrapping="Wrap" AcceptsReturn="False"
+                             Height="64" MaxWidth="420"
+                             FontFamily="{StaticResource MonoFont}" FontSize="11"
+                             VerticalContentAlignment="Top" />
                 </StackPanel>
             </StackPanel>
-        </ScrollViewer>
+        </StackPanel>
 
         <!-- Footer -->
         <Border Grid.Row="2" Padding="24,16"
