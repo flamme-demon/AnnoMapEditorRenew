@@ -832,6 +832,41 @@
             <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
 
+        <!-- ── Button.lang-toggle : bouton rond pour cycle FR ↔ EN dans le header.
+             Apparenté à .btn.ghost mais circulaire (CornerRadius=18) et compact. ── -->
+        <Style Selector="Button.lang-toggle">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Background" Value="{DynamicResource ConceptInk950Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.lang-toggle:pointerover /template/ Border#PART_Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource ConceptGold500Brush}" />
+            <Setter Property="Background" Value="{DynamicResource ConceptInk900Brush}" />
+        </Style>
+
         <!-- ── Variant "no-bullet" pour les RadioButton stylés (no Fluent bullet) ── -->
         <Style Selector="RadioButton.biome-tab, RadioButton.size-pill, RadioButton.type-chip,
                          RadioButton.map-tab, RadioButton.diff-pill">

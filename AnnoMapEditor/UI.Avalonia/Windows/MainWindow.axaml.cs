@@ -144,6 +144,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         private void OnOpened(object? sender, EventArgs e)
         {
             DataManager dm = DataManager.Instance;
+            UpdateLanguageToggleFlag();
             if (_gameTitle != null)
                 _gameTitle.Text = dm.DetectedGame?.Title ?? "—";
             if (_statusBar != null)
@@ -1447,6 +1448,25 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             await dialog.ShowDialog(this);
         }
 
+        // ─────────── Bouton drapeau langue (header) ───────────
+        // Cycle FR ↔ EN. Le contenu du bouton est l'emoji drapeau de la langue
+        // active (donc 🇫🇷 = la langue active est FR ; cliquer bascule vers EN
+        // et le drapeau passe à 🇬🇧).
+
+        private void OnLanguageToggleClicked(object? sender, RoutedEventArgs e)
+        {
+            string next = Localizer.Current.Language == "fr" ? "en" : "fr";
+            Localizer.Current.Language = next;
+            UpdateLanguageToggleFlag();
+        }
+
+        private void UpdateLanguageToggleFlag()
+        {
+            var btn = this.FindControl<Button>("LanguageToggleBtn");
+            if (btn is null) return;
+            btn.Content = Localizer.Current.Language == "fr" ? "🇫🇷" : "🇬🇧";
+        }
+
         // ------------------- Biome / Map tabs (concept) -------------------
         // Pour cette première itération, ces handlers se contentent de
         // refléter visuellement la sélection (titre du panneau Place Islands +
@@ -1457,35 +1477,33 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         {
             if (sender is not RadioButton rb || rb.IsChecked != true) return;
             string biomeId = rb.Tag as string ?? "latium";
-            string biomeLabel = biomeId switch
-            {
-                "albion"  => "ALBION",
-                "desert"  => "DÉSERT",
-                "nordic"  => "NORDIQUE",
-                _         => "LATIUM",
-            };
+            // Le label affiché vient de l'i18n et est en majuscules pour le titre
+            // de panneau Place Islands. La clé biome.* renvoie "Latium"/"Albion"
+            // côté biome bar, mais ici on veut l'affichage display ; on majuscule.
+            string biomeLabel = (Localizer.Current[$"biome.{biomeId}"] ?? "Latium").ToUpperInvariant();
             var title = this.FindControl<TextBlock>("PlaceIslandsBiomeTitle");
             if (title is not null) title.Text = biomeLabel;
 
             if (_statusBar is not null)
-                _statusBar.Text = $"Biome actif : {biomeLabel}";
+                _statusBar.Text = biomeLabel;
         }
 
         private void OnMapTabSelected(object? sender, RoutedEventArgs e)
         {
             if (sender is not RadioButton rb || rb.IsChecked != true) return;
             int idx = int.TryParse(rb.Tag as string, out int i) ? i : 0;
-            string diffLabel = idx switch
+            string diffKey = idx switch
             {
-                1 => "NORMAL",
-                2 => "DIFFICILE",
-                _ => "FACILE",
+                1 => "biomebar.diff_normal",
+                2 => "biomebar.diff_hard",
+                _ => "biomebar.diff_easy",
             };
+            string diffLabel = Localizer.Current[diffKey] ?? "—";
             var label = this.FindControl<TextBlock>("DifficultyBadgeLabel");
             if (label is not null) label.Text = diffLabel;
 
             if (_statusBar is not null)
-                _statusBar.Text = $"Carte {idx + 1} · {diffLabel}";
+                _statusBar.Text = $"{idx + 1} · {diffLabel}";
         }
 
         // ------------------- Elements TreeView -------------------

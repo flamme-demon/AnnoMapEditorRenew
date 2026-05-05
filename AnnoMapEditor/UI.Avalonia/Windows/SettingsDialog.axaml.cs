@@ -36,8 +36,6 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                     gamePath.Text = Settings.Instance.GamePath ?? "";
                     gamePath.TextChanged += OnGamePathChanged;
                 }
-
-                SyncLanguage();
             }
             finally
             {
@@ -47,27 +45,11 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
 
         private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-        private void SyncLanguage()
-        {
-            var combo = this.FindControl<ComboBox>("LanguageCombo");
-            if (combo is null) return;
-            string current = Localizer.Current.Language;
-            combo.SelectedIndex = current == "fr" ? 1 : 0;
-        }
-
         private void OnAutoStartToggled(object? sender, RoutedEventArgs e)
         {
             if (_suppressEvents) return;
             if (sender is CheckBox cb && cb.IsChecked is bool value)
                 Settings.Instance.AutoStart = value;
-        }
-
-        private void OnLanguageChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (sender is not ComboBox combo) return;
-            if (combo.SelectedItem is ComboBoxItem item && item.Tag is string lang)
-                Localizer.Current.Language = lang;
         }
 
         private void OnGamePathChanged(object? sender, TextChangedEventArgs e)

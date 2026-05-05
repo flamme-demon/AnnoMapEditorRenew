@@ -3,7 +3,7 @@
         xmlns:l="using:AnnoMapEditor.Utilities"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.SettingsDialog"
         Title="{l:L Key=settings.title}"
-        Width="520" Height="560"
+        Width="520" Height="440"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="{DynamicResource ConceptInk900Brush}"
@@ -16,7 +16,7 @@
                 BorderBrush="{DynamicResource ConceptBorderBrush}"
                 BorderThickness="0,0,0,1">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-                <TextBlock Text="ATELIER" Classes="t-eyebrow" HorizontalAlignment="Center" />
+                <TextBlock Text="{l:L Key=settings.atelier}" Classes="t-eyebrow" HorizontalAlignment="Center" />
                 <TextBlock Text="{l:L Key=settings.title}" Classes="modal-title" />
                 <Border Classes="divider-ornate" Width="160" Margin="0,8,0,0" />
             </StackPanel>
@@ -34,7 +34,7 @@
 
             <!-- ── Démarrage ── -->
             <StackPanel Spacing="10">
-                <TextBlock Text="DÉMARRAGE" Classes="t-eyebrow" />
+                <TextBlock Text="{l:L Key=settings.startup}" Classes="t-eyebrow" />
                 <CheckBox x:Name="AutoStartCheckBox"
                           IsCheckedChanged="OnAutoStartToggled"
                           Foreground="{DynamicResource ConceptTextBrush}">
@@ -49,32 +49,13 @@
 
             <Border Classes="divider-ornate" />
 
-            <!-- ── Apparence ── -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="APPARENCE" Classes="t-eyebrow" />
-
-                <Grid ColumnDefinitions="140,*">
-                    <TextBlock Grid.Column="0" Text="Langue"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource ConceptTextBrush}" />
-                    <ComboBox Grid.Column="1" x:Name="LanguageCombo"
-                              Classes="input" HorizontalAlignment="Stretch"
-                              SelectionChanged="OnLanguageChanged">
-                        <ComboBoxItem Content="English"  Tag="en" />
-                        <ComboBoxItem Content="Français" Tag="fr" />
-                    </ComboBox>
-                </Grid>
-            </StackPanel>
-
-            <Border Classes="divider-ornate" />
-
             <!-- ── Dossier du jeu ── -->
             <StackPanel Spacing="6">
                 <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Grid.Column="0" Text="DOSSIER DU JEU" Classes="t-eyebrow"
+                    <TextBlock Grid.Column="0" Text="{l:L Key=settings.game_folder}" Classes="t-eyebrow"
                                VerticalAlignment="Center" />
                     <Button Grid.Column="1" Classes="btn ghost sm"
-                            Content="Parcourir…" Click="OnBrowseClicked" />
+                            Content="{l:L Key=settings.browse}" Click="OnBrowseClicked" />
                 </Grid>
                 <!-- TextBox éditable. Width plafonné explicitement à 420 (= 520
                      Window - 32*2 padding - quelques pixels d'air) pour éviter le
@@ -97,12 +78,12 @@
                 BorderThickness="0,1,0,0">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0"
-                           Text="Les changements sont enregistrés en direct."
+                           Text="{l:L Key=settings.live_save}"
                            Foreground="{DynamicResource ConceptTextMuteBrush}"
                            FontSize="11" FontStyle="Italic"
                            VerticalAlignment="Center" />
                 <Button Grid.Column="1" Classes="btn primary"
-                        Content="Fermer" Click="OnCloseClicked" />
+                        Content="{l:L Key=settings.close}" Click="OnCloseClicked" />
             </Grid>
         </Border>
     </Grid>

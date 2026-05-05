@@ -53,7 +53,7 @@
                         <TextBlock Text="ANNO 117" Classes="t-display"
                                    FontSize="12" Foreground="{DynamicResource ConceptGold300Brush}"
                                    LetterSpacing="2" />
-                        <TextBlock x:Name="GameTitle" Text="Anno Mod Creator"
+                        <TextBlock x:Name="GameTitle" Text="{l:L Key=header.tagline}"
                                    Classes="t-mute" FontSize="9" LetterSpacing="1.6" />
                     </StackPanel>
 
@@ -83,20 +83,29 @@
                     <!-- Actions à droite (Editor.jsx 463-476) -->
                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6"
                                 VerticalAlignment="Center">
-                        <Button Classes="btn secondary sm" Content="✦  Nouvelle" />
-                        <Button Classes="btn secondary sm" Content="⇣  Importer du jeu" />
+                        <Button Classes="btn secondary sm" Content="{l:L Key=header.new_map}" />
+                        <Button Classes="btn secondary sm" Content="{l:L Key=header.import_game}" />
                         <Border Width="1" Height="18" Margin="2,0"
                                 Background="{DynamicResource ConceptBorderBrush}" />
                         <Button x:Name="SaveModButton" Classes="btn secondary sm"
-                                Content="💾  Sauvegarder"
+                                Content="{l:L Key=header.save}"
                                 Click="OnSaveModClicked" IsEnabled="False" />
                         <Button Classes="btn ghost sm icon" Content="🖼"
-                                ToolTip.Tip="Exporter PNG" />
-                        <Button Classes="btn primary sm" Content="⇡  Exporter le mod" />
+                                ToolTip.Tip="{l:L Key=header.export_png_tip}" />
+                        <Button Classes="btn primary sm" Content="{l:L Key=header.export_mod}" />
                         <Border Width="1" Height="18" Margin="2,0"
                                 Background="{DynamicResource ConceptBorderBrush}" />
+                        <!-- Bouton drapeau langue : cycle FR ↔ EN. Le contenu (emoji
+                             drapeau) est mis à jour par le code-behind selon
+                             Localizer.Current.Language. Forme ronde pour le
+                             distinguer des autres boutons header. -->
+                        <Button x:Name="LanguageToggleBtn"
+                                Classes="lang-toggle"
+                                Content="🇫🇷"
+                                ToolTip.Tip="{l:L Key=header.toggle_language}"
+                                Click="OnLanguageToggleClicked" />
                         <Button Classes="btn ghost sm icon" Content="⚙"
-                                ToolTip.Tip="Paramètres"
+                                ToolTip.Tip="{l:L Key=header.settings}"
                                 Click="OnSettingsClicked" />
                     </StackPanel>
                 </Grid>
@@ -127,7 +136,7 @@
                                 <Ellipse Canvas.Left="6.3" Canvas.Top="6.3" Width="1.4" Height="1.4"
                                          Fill="{DynamicResource ConceptGold300Brush}" />
                             </Canvas>
-                            <TextBlock Text="Latium" VerticalAlignment="Center" />
+                            <TextBlock Text="{l:L Key=biome.latium}" VerticalAlignment="Center" />
                             <Border Padding="5,1" CornerRadius="999"
                                     Background="{DynamicResource ConceptInk950Brush}">
                                 <TextBlock Text="0/3" Classes="t-mono" FontSize="9"
@@ -147,7 +156,7 @@
                                 <Path Stroke="{DynamicResource ConceptGold500Brush}" StrokeThickness="1.2"
                                       Data="M 7 11.7 C 4.7 11.7 2.9 10 2.9 7.6 C 2.9 5.8 4.7 4.7 6.4 4.7 C 7.6 4.7 8.7 5.8 8.7 7 C 8.7 7.6 8.2 8.2 7.6 8.2" />
                                 </Canvas>
-                            <TextBlock Text="Albion" VerticalAlignment="Center" />
+                            <TextBlock Text="{l:L Key=biome.albion}" VerticalAlignment="Center" />
                             <Border Padding="5,1" CornerRadius="999"
                                     Background="{DynamicResource ConceptInk950Brush}">
                                 <TextBlock Text="0/3" Classes="t-mono" FontSize="9"
@@ -160,8 +169,8 @@
                         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <TextBlock Text="◐" FontSize="13" VerticalAlignment="Center"
                                        Foreground="{DynamicResource ConceptTextMuteBrush}" />
-                            <TextBlock Text="Désert" VerticalAlignment="Center" />
-                            <TextBlock Text="Bientôt" Classes="t-mute" FontSize="9" VerticalAlignment="Center" />
+                            <TextBlock Text="{l:L Key=biome.desert}" VerticalAlignment="Center" />
+                            <TextBlock Text="{l:L Key=biome.soon}" Classes="t-mute" FontSize="9" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Grid.Column="3" Classes="biome-tab" GroupName="Biome"
@@ -169,8 +178,8 @@
                         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <TextBlock Text="❄" FontSize="13" VerticalAlignment="Center"
                                        Foreground="{DynamicResource ConceptTextMuteBrush}" />
-                            <TextBlock Text="Nordique" VerticalAlignment="Center" />
-                            <TextBlock Text="Bientôt" Classes="t-mute" FontSize="9" VerticalAlignment="Center" />
+                            <TextBlock Text="{l:L Key=biome.nordic}" VerticalAlignment="Center" />
+                            <TextBlock Text="{l:L Key=biome.soon}" Classes="t-mute" FontSize="9" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
 
@@ -181,7 +190,7 @@
                     <!-- Map tabs (Editor.jsx 528-553) -->
                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6"
                                 VerticalAlignment="Center" HorizontalAlignment="Left">
-                        <TextBlock Text="CARTE" Classes="t-eyebrow" FontSize="9" VerticalAlignment="Center" />
+                        <TextBlock Text="{l:L Key=biomebar.map}" Classes="t-eyebrow" FontSize="9" VerticalAlignment="Center" />
                         <RadioButton x:Name="MapTab1" Tag="0" Classes="map-tab" GroupName="Map"
                                      IsChecked="True" IsCheckedChanged="OnMapTabSelected" Content="1" />
                         <RadioButton x:Name="MapTab2" Tag="1" Classes="map-tab" GroupName="Map"
@@ -191,14 +200,14 @@
                     </StackPanel>
 
                     <!-- Difficulty badge à droite (Editor.jsx 557-575) -->
-                    <TextBlock Grid.Column="6" Text="DIFFICULTÉ" Classes="t-eyebrow"
+                    <TextBlock Grid.Column="6" Text="{l:L Key=biomebar.difficulty}" Classes="t-eyebrow"
                                FontSize="9" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <Border Grid.Column="7" x:Name="DifficultyBadge"
                             Padding="12,4" CornerRadius="3"
                             Background="#26C8A96A"
                             BorderBrush="{DynamicResource ConceptGold700Brush}"
                             BorderThickness="1">
-                        <TextBlock x:Name="DifficultyBadgeLabel" Text="NORMAL"
+                        <TextBlock x:Name="DifficultyBadgeLabel" Text="{l:L Key=biomebar.diff_normal}"
                                    Foreground="{DynamicResource ConceptGold300Brush}"
                                    FontSize="11" LetterSpacing="0.6" />
                     </Border>
