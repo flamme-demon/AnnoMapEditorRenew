@@ -24,6 +24,9 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
             _viewModel = new StartWindowViewModel();
             DataContext = _viewModel;
             InitializeComponent();
+#if DEBUG
+            this.AttachDevTools();
+#endif
             WindowStateService.Attach(this, WindowKind.Start);
 
             var combo = this.FindControl<ComboBox>("LanguageSelector");

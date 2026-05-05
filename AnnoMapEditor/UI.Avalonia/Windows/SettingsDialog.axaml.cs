@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
@@ -15,6 +16,9 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         public SettingsDialog()
         {
             InitializeComponent();
+#if DEBUG
+            this.AttachDevTools();
+#endif
 
             // Sync UI from current settings without retriggering handlers (otherwise
             // setting IsChecked here would fire OnXxxToggled and bounce-write the

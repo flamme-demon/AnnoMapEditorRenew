@@ -71,6 +71,9 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
         public MainWindow()
         {
             InitializeComponent();
+#if DEBUG
+            this.AttachDevTools();
+#endif
             WindowStateService.Attach(this, WindowKind.Main);
             // Append the version to the window title so users can quote it on bug reports / PRs.
             Title = $"{Title}  ·  {AppInfo.ShortVersionLabel}";
