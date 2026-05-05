@@ -22,11 +22,15 @@
             </StackPanel>
         </Border>
 
-        <!-- Body : pas de ScrollViewer (le mode Disabled d'Avalonia ne contraint
-             pas le contenu, ce qui causait des débordements à droite quel que soit
-             le wrap demandé sur les enfants). Tout est dans un StackPanel direct ;
-             la fenêtre 520x640 est dimensionnée pour que ça rentre sans scroll. -->
-        <StackPanel Grid.Row="1" Spacing="22" Margin="32,20">
+        <!-- Body : ScrollViewer vertical (le contenu peut déborder en hauteur quand
+             on ajoutera des sections). HorizontalScrollBarVisibility=Disabled — le
+             débordement horizontal qu'on avait avant venait du TextBox path naturellement
+             large, qui est maintenant borné par MaxWidth=420. ScrollBar stylé via les
+             ressources Fluent dans App.axaml (charte concept). -->
+        <ScrollViewer Grid.Row="1" Padding="32,20"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="22">
 
             <!-- ── Démarrage ── -->
             <StackPanel Spacing="10">
@@ -99,6 +103,7 @@
                 </StackPanel>
             </StackPanel>
         </StackPanel>
+        </ScrollViewer>
 
         <!-- Footer -->
         <Border Grid.Row="2" Padding="24,16"
