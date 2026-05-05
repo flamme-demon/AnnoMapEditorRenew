@@ -85,14 +85,24 @@
 
                     <StackPanel Spacing="6">
                         <TextBlock Text="DOSSIER DU JEU" Classes="t-eyebrow" />
-                        <!-- Le path Steam Proton est très long ; wrap multi-ligne pour
-                             ne jamais déborder. Hauteur fixe pour ne pas faire grandir
-                             le panneau. -->
-                        <TextBox x:Name="GamePathBox" Classes="input" IsReadOnly="True"
-                                 TextWrapping="Wrap" AcceptsReturn="False"
-                                 Height="64"
-                                 FontFamily="{StaticResource MonoFont}" FontSize="11"
-                                 VerticalContentAlignment="Top" />
+                        <!-- Path read-only : Border + TextBlock plutôt qu'un TextBox.
+                             Un TextBox Avalonia pose une Width naturelle plus large
+                             que son parent pour les longs textes même avec
+                             `TextWrapping=Wrap` + `MinWidth=0`, et le
+                             ScrollContentPresenter en mode `HorizontalScrollBarVisibility=
+                             Disabled` ne le contraint pas (cas observé via DevTools).
+                             Un TextBlock wrap correctement dès que sa Width est bornée
+                             par son parent — comportement attendu. -->
+                        <Border Background="{DynamicResource ConceptInk950Brush}"
+                                BorderBrush="{DynamicResource ConceptBorderBrush}"
+                                BorderThickness="1" CornerRadius="4"
+                                Padding="12,9">
+                            <TextBlock x:Name="GamePathLabel"
+                                       TextWrapping="Wrap"
+                                       FontFamily="{StaticResource MonoFont}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource ConceptTextBrush}" />
+                        </Border>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

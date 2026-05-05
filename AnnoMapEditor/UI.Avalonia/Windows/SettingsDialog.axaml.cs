@@ -32,7 +32,7 @@ namespace AnnoMapEditor.UI.Avalonia.Windows
                 var expertMode = this.FindControl<CheckBox>("ExpertModeCheckBox");
                 if (expertMode != null) expertMode.IsChecked = Settings.Instance.EnableExpertMode;
 
-                var gamePath = this.FindControl<TextBox>("GamePathBox");
+                var gamePath = this.FindControl<TextBlock>("GamePathLabel");
                 if (gamePath != null) gamePath.Text = Settings.Instance.GamePath ?? "";
 
                 SyncLanguage();
