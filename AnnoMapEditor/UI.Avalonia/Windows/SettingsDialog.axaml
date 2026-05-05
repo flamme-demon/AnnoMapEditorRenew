@@ -3,7 +3,7 @@
         xmlns:l="using:AnnoMapEditor.Utilities"
         x:Class="AnnoMapEditor.UI.Avalonia.Windows.SettingsDialog"
         Title="{l:L Key=settings.title}"
-        Width="520" Height="500"
+        Width="520" Height="560"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="{DynamicResource ConceptInk900Brush}"
