@@ -81,7 +81,14 @@
 
                     <StackPanel Spacing="6">
                         <TextBlock Text="DOSSIER DU JEU" Classes="t-eyebrow" />
-                        <TextBox x:Name="GamePathBox" Classes="input" IsReadOnly="True" />
+                        <!-- Le path Steam Proton est très long ; wrap multi-ligne pour
+                             ne jamais déborder. Hauteur fixe pour ne pas faire grandir
+                             le panneau. -->
+                        <TextBox x:Name="GamePathBox" Classes="input" IsReadOnly="True"
+                                 TextWrapping="Wrap" AcceptsReturn="False"
+                                 Height="64"
+                                 FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                 VerticalContentAlignment="Top" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
